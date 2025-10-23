@@ -1,0 +1,40 @@
+{% block content %}
+<h2>Registrar Nueva Entrega</h2>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">{{ form.remitoRecepcion.label_tag }} {{ form.remitoRecepcion }}</div>
+    <div class="mb-3">{{ form.idEmpleado.label_tag }} {{ form.idEmpleado }}</div>
+    <div class="mb-3">{{ form.idCliente.label_tag }} {{ form.idCliente }}</div>
+    <div class="mb-3">{{ form.idObra.label_tag }} {{ form.idObra }}</div>
+
+    <h4>Datos del Conductor</h4>
+    <div class="mb-3">{{ form.nombreConductor.label_tag }} {{ form.nombreConductor }}</div>
+    <div class="mb-3">{{ form.apellidoConductor.label_tag }} {{ form.apellidoConductor }}</div>
+    <div class="mb-3">{{ form.patenteConductor.label_tag }} {{ form.patenteConductor }}</div>
+    <div class="mb-3">{{ form.transporteConductor.label_tag }} {{ form.transporteConductor }}</div>
+
+    <button type="submit" class="btn btn-primary">Guardar Entrega</button>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function(){
+    $('#id_idCliente').change(function(){
+        var cliente_id = $(this).val();
+        $.ajax({
+            url: "{% url 'get_obras' %}",
+            data: {'cliente_id': cliente_id},
+            success: function(data){
+                var obra_select = $('#id_idObra');
+                obra_select.empty();
+                obra_select.append('<option value="">---------</option>');
+                $.each(data, function(index, obra){
+                    obra_select.append('<option value="'+obra.idObra+'">'+obra.nombreObra+'</option>');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

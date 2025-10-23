@@ -1,0 +1,40 @@
+{% extends "navegacion.html" %}
+{% block content %}
+
+<p>Este es el home</p>
+
+{% if request.user.is_authenticated %}
+    {% csrf_token %}
+    <p>Si puedes ver esto es porque estas logeado como {{ request.user.username }}</p>
+   
+    <a href="{% url 'crear_entrega' %}" class="btn btn-primary">Crear Entrega</a>
+    <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Crear Empleado</a>
+    <a href="{% url 'tabla_reportes' %}" class="btn btn-primary">Ver tabla de reportes</a>
+    <a href="{% url 'crear_cliente' %}" class="btn btn-primary">Crear Cliente</a>
+    <a href="{% url 'crear_obra' %}">Registrar Obra</a>
+   
+
+    {% if reporte %}
+    <h3>Último reporte registrado: #{{ reporte.idReporte }}</h3>
+    <p>Cliente: {{ reporte.idCliente.nombre }}</p>
+    <p>Conductor: {{ reporte.idConductor.nombre }} {{ reporte.idConductor.apellido }}</p>
+    <a href="{% url 'detalle_reporte' reporte.idReporte %}" class="btn btn-primary">
+        Ver detalles
+   
+
+    {% else %}
+        <p>No hay reportes registrados aún.</p>
+    {% endif %}
+
+
+{% else %} 
+    <p>Todavia no has iniciado sesion</p>
+
+    <li>
+        <a href="{% url 'login' %}">Login</a>
+    </li>
+
+{% endif %}
+
+
+{% endblock%}

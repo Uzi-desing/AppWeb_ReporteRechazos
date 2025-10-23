@@ -1,0 +1,159 @@
+{% block content %}
+<h2>Listado de Reportes</h2>
+
+<div>
+    <label for="fechaDesde">Desde:</label>
+    <input type="date" id="fechaDesde">
+    <label for="fechaHasta">Hasta:</label>
+    <input type="date" id="fechaHasta">
+    <button id="filtrarFechas">Filtrar</button>
+    <button id="limpiarFiltros">Quitar Filtros</button>
+</div>
+
+<div>
+    <label for="buscador">Buscar:</label>
+    <input type="text" id="buscador" placeholder="Buscar por cualquier campo...">
+</div>
+
+<table id="tablaReportes" border="1">
+    <thead>
+        <tr>
+            <th data-col="0">N° Reporte</th>
+            <th data-col="1">Fecha</th>
+            <th data-col="2">Cliente</th>
+            <th data-col="3">Obras del Cliente</th>
+            <th data-col="4">Remito Recepción</th>
+            <th data-col="5">Empleado a Cargo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for reporte in reportes %}
+        <tr>
+            <td>{{ reporte.idReporte }}</td>
+            <td>{{ reporte.fecha|date:"Y-m-d" }}</td>
+            <td>{{ reporte.idCliente.nombre }}</td>
+            <td>{{ reporte.idObra.nombreObra }}</td>
+            <td>{{ reporte.remitoRecepcion }}</td>
+            <td>{{ reporte.idEmpleado }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p id="mensajeNoResultados" style="display: none; color: red;">
+    Su reporte no se ha encontrado.
+</p>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const buscador = document.getElementById("buscador");
+    const fechaDesde = document.getElementById("fechaDesde");
+    const fechaHasta = document.getElementById("fechaHasta");
+    const btnFiltrar = document.getElementById("filtrarFechas");
+    const btnLimpiar = document.getElementById("limpiarFiltros");
+    const tabla = document.getElementById("tablaReportes");
+    const filas = tabla.getElementsByTagName("tr");
+    const encabezados = tabla.querySelectorAll("th");
+    const mensajeNoResultados = document.getElementById("mensajeNoResultados");
+    let ordenActual = {};
+
+    // Función para mostrar u ocultar mensaje "sin resultados"
+    function verificarResultados() {
+        let visibles = 0;
+        for (let i = 1; i < filas.length; i++) {
+            if (filas[i].style.display !== "none") visibles++;
+        }
+        mensajeNoResultados.style.display = visibles === 0 ? "block" : "none";
+    }
+
+    // 🔍 Buscador general (incluye ID y todos los campos)
+    buscador.addEventListener("keyup", function() {
+        const texto = buscador.value.toLowerCase();
+        for (let i = 1; i < filas.length; i++) {
+            const celdas = filas[i].getElementsByTagName("td");
+            let coincide = false;
+            for (let j = 0; j < celdas.length; j++) {
+                const textoCelda = celdas[j].textContent.toLowerCase();
+                if (textoCelda.includes(texto)) {
+                    coincide = true;
+                    break;
+                }
+            }
+            filas[i].style.display = coincide ? "" : "none";
+        }
+        verificarResultados();
+    });
+
+    // 📅 Filtro entre fechas
+    btnFiltrar.addEventListener("click", function() {
+        const desde = fechaDesde.value ? new Date(fechaDesde.value) : null;
+        const hasta = fechaHasta.value ? new Date(fechaHasta.value) : null;
+
+        for (let i = 1; i < filas.length; i++) {
+            const celdaFecha = filas[i].getElementsByTagName("td")[1];
+            if (!celdaFecha) continue;
+
+            const fechaTexto = celdaFecha.textContent.trim();
+            const fechaReporte = new Date(fechaTexto);
+            let mostrar = true;
+
+            if (desde && fechaReporte < desde) mostrar = false;
+            if (hasta && fechaReporte > hasta) mostrar = false;
+
+            filas[i].style.display = mostrar ? "" : "none";
+        }
+        verificarResultados();
+    });
+
+    // 🔄 Quitar filtros y buscador
+    btnLimpiar.addEventListener("click", function() {
+        buscador.value = "";
+        fechaDesde.value = "";
+        fechaHasta.value = "";
+        for (let i = 1; i < filas.length; i++) {
+            filas[i].style.display = "";
+        }
+        verificarResultados();
+    });
+
+    // ↕️ Ordenar columnas (asc / desc)
+    encabezados.forEach((th, index) => {
+        th.addEventListener("click", () => {
+            const col = index;
+            const asc = !ordenActual[col]; // alternar orden
+
+            const filasArray = Array.from(tabla.querySelectorAll("tbody tr"));
+
+            filasArray.sort((a, b) => {
+                const aText = a.children[col].textContent.trim();
+                const bText = b.children[col].textContent.trim();
+
+                // Si es número, comparar numéricamente
+                const aNum = parseFloat(aText);
+                const bNum = parseFloat(bText);
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return asc ? aNum - bNum : bNum - aNum;
+                }
+
+                // Si es fecha
+                const aDate = new Date(aText);
+                const bDate = new Date(bText);
+                if (!isNaN(aDate) && !isNaN(bDate)) {
+                    return asc ? aDate - bDate : bDate - aDate;
+                }
+
+                // Comparación alfabética
+                return asc
+                    ? aText.localeCompare(bText)
+                    : bText.localeCompare(aText);
+            });
+
+            ordenActual[col] = asc;
+
+            const tbody = tabla.querySelector("tbody");
+            filasArray.forEach(fila => tbody.appendChild(fila));
+        });
+    });
+});
+</script>
+{% endblock %}

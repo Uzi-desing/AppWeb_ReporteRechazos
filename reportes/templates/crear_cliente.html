@@ -1,0 +1,8 @@
+{% block content %}
+<h2>Registrar Nuevo Cliente</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit">Guardar Cliente</button>
+</form>
+{% endblock %}

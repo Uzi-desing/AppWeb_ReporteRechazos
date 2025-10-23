@@ -1,0 +1,53 @@
+{% block title %}Detalle del Reporte{% endblock %}
+
+{% block content %}
+<h2>Reporte #{{ reporte.idReporte }} - Cliente: {{ reporte.idCliente.nombre }} 
+   
+        - Obra: {{ reporte.idObra.nombreObra }}
+
+</h2>
+<p>Conductor: {{ reporte.idConductor.nombre|title }} {{ reporte.idConductor.apellido|title }}</p>
+<p>Fecha: {{ reporte.fecha }}</p>
+<a href="{% url 'generar_reporte_pdf' reporte.idReporte %}">Generar Pdf</a>
+
+<h3>Piezas Rechazadas</h3>
+{% if piezas_rechazadas %}
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Categoría de Pieza</th>
+            <th>Medidas</th>
+            <th>Categoría de Daño</th>
+            <th>Cantidad</th>
+            <th>Observaciones</th>
+            <th>Imagen</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pieza in piezas_rechazadas %}
+        <tr>
+            <td>{{ pieza.idPieza.idCategoria.descripcion }}</td>
+            
+            <td>{{ pieza.idPieza.medidas }}</td>
+            
+            <td>{{ pieza.idCategoriaDano }}</td>
+            <td>{{ pieza.cantidad }}</td>
+            <td>{{ pieza.observaciones }}</td>
+            <td>
+                {% if pieza.imagen %}
+                    <img src="{% url 'ver_imagen_segura' pieza.idPiezaRechazada %}" width="150">
+                {% else %}
+                    <span class="text-muted">Sin imagen</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+
+
+    </tbody>
+
+</table>
+{% else %}
+<p>No hay piezas rechazadas registradas para este reporte.</p>
+{% endif %}
+{% endblock %}

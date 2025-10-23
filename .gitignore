@@ -1,0 +1,15 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+#1. Seguridad y Claves Secretas
+#---------------------------------------
+#El .env ignora: DJANGO_SECRET_KEY, AZURE_ACCOUNT_KEY, Credenciales de la Base MySql
+.env
+
+#Entornos vituales (venv)
+/venv
+
+#Archivos Generados y Caché
+__pycache__/
+*.pyc
+
+#Archivos de Medios(Media)
+/media/

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Navegacion{% endblock %}</title>
+</head>
+<body>
+    <nav>
+        <div>
+            <a href="{% url 'home' %}">Inicio</a>
+        </div>
+        <ul>
+            {% if user.is_authenticated %}
+            <li>
+                <a href="{% url 'logout' %}">Salir</a>
+                
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+
+
+    </main>
+</body>
+</html>
+
+
+
