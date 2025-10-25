@@ -1,0 +1,26 @@
+{
+  "name": "proyectofinal",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/src/input.css -o ./static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./static/src/input.css -o ./static/css/tailwind.css --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Uzi-desing/AppWeb_ReporteRechazos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Uzi-desing/AppWeb_ReporteRechazos/issues"
+  },
+  "homepage": "https://github.com/Uzi-desing/AppWeb_ReporteRechazos#readme",
+  "description": "",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.16",
+    "tailwindcss": "^4.1.16"
+  }
+}

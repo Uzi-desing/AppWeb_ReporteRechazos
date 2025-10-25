@@ -1,0 +1,19 @@
+#Variables de Entorno
+
+#1.Configuracion Crítica de Django
+DJANGO_SECRET_KEY="Tu key de desarrollador de Django"
+
+ALLOWED_HOSTS="Tus Host "
+
+#2.Credenciales de Base de Datos
+DB_NAME="Nombre de tu Base de Datos"
+DB_USER="Credencial de Usuarios"
+DB_PASSWORD="Credencial de password"
+DB_HOST="Host de la base de datos"
+DB_PORT="Puertos"
+
+#3.Credenciales para Azure Blob Storage
+AZURE_STORAGE_CONNECTION_STRING="Clave String de conexión de azure"
+AZURE_ACCOUNT_NAME="Nombre de la cuenta de almacenamiento"
+AZURE_ACCOUNT_KEY="Key de la cuenta de almacenamiento"
+AZURE_CONTAINER_NAME="Name del contenedor"
