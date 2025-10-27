@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django_browser_reload',
     'reportes',
     'storages',
+    'widget_tweaks',
+    
 ]
 
 MIDDLEWARE = [
@@ -152,4 +154,11 @@ DEFAULT_FILE_STORAGE = 'reportes.storage_backends.AzureMediaStorage'
 AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
 MEDIA_URL = f'https://{AZURE_CUSTOM_DOMAIN}/{AZURE_CONTAINER}/'
 
+LOGIN_URL = 'login'  # Usa el nombre de la URL, no la ruta
+LOGIN_REDIRECT_URL = 'home'  # Redirige a home después del login
+LOGOUT_REDIRECT_URL = 'login'  # Redirige a login después del logout
 
+# Configuración de sesión (opcional pero recomendado)
+SESSION_COOKIE_AGE = 3600  # Sesión expira en 1 hora (3600 segundos)
+SESSION_SAVE_EVERY_REQUEST = True  # Renueva el tiempo de sesión en cada request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Sesión expira al cerrar navegador

@@ -1,40 +1,73 @@
 {% extends "navegacion.html" %}
 {% block content %}
 
-<p>Este es el home</p>
-
 {% if request.user.is_authenticated %}
     {% csrf_token %}
-    <p>Si puedes ver esto es porque estas logeado como {{ request.user.username }}</p>
-   
-    <a href="{% url 'crear_entrega' %}" class="btn btn-primary">Crear Entrega</a>
-    <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Crear Empleado</a>
-    <a href="{% url 'tabla_reportes' %}" class="btn btn-primary">Ver tabla de reportes</a>
-    <a href="{% url 'crear_cliente' %}" class="btn btn-primary">Crear Cliente</a>
-    <a href="{% url 'crear_obra' %}">Registrar Obra</a>
-   
+    <p class="mb-4 text-sm text-black/80">Bienvenido <span class="font-medium">{{ request.user.username }}</span></p>
+
+    <div class="flex flex-wrap gap-3 mb-8">
+        <a href="{% url 'crear_entrega' %}" 
+            class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+            <i data-lucide="package" class="w-4 h-4 mr-2"></i>
+        Crear Entrega</a>
+
+<a href="{% url 'crear_empleado' %}"
+   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+  <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+  Crear Empleado
+</a>
+
+<a href="{% url 'tabla_reportes' %}"
+   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+  <i data-lucide="table" class="w-4 h-4 mr-2"></i>
+  Ver tabla de reportes
+</a>
+
+<a href="{% url 'crear_cliente' %}"
+   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+  <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+  Crear Cliente
+</a>
+
+<a href="{% url 'crear_obra' %}"
+   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+  <i data-lucide="hammer" class="w-4 h-4 mr-2"></i>
+  Registrar Obra
+</a>
+    </div>
 
     {% if reporte %}
-    <h3>Último reporte registrado: #{{ reporte.idReporte }}</h3>
-    <p>Cliente: {{ reporte.idCliente.nombre }}</p>
-    <p>Conductor: {{ reporte.idConductor.nombre }} {{ reporte.idConductor.apellido }}</p>
-    <a href="{% url 'detalle_reporte' reporte.idReporte %}" class="btn btn-primary">
-        Ver detalles
+    <div class="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
+        <h3 class="text-lg font-semibold mb-2">Último reporte registrado: <span class="text-brand">#{{ reporte.idReporte }}</span></h3>
+        <p class="text-sm">Cliente: <span class="font-medium">{{ reporte.idCliente.nombre }}</span></p>
+        <p class="text-sm mb-4">Conductor: <span class="font-medium">{{ reporte.idConductor.nombre }} {{ reporte.idConductor.apellido }}</span></p>
+        <a href="{% url 'detalle_reporte' reporte.idReporte %}"
+           class="inline-flex items-center rounded-md border border-black px-3 py-1.5 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+            Ver detalles
+        </a>
+    </div>
    
 
     {% else %}
-        <p>No hay reportes registrados aún.</p>
+        <p class="text-sm text-black/70">No hay reportes registrados aún.</p>
     {% endif %}
 
 
 {% else %} 
-    <p>Todavia no has iniciado sesion</p>
+    <p class="mb-3">Todavia no has iniciado sesion</p>
 
-    <li>
-        <a href="{% url 'login' %}">Login</a>
+    <li class="list-none">
+        <a href="{% url 'login' %}"
+           class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+           Login
+        </a>
     </li>
 
 {% endif %}
 
 
 {% endblock%}
+
+
+
+

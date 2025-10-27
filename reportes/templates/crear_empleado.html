@@ -1,8 +1,289 @@
+{% extends "navegacion.html" %}
+{% load widget_tweaks %}
+
 {% block content %}
-<h2>Registrar Nuevo Empleado</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Guardar Empleado</button>
-</form>
+<h1 class="text-2xl font-semibold tracking-tight mb-6">Registro de Empleado</h1>
+
+<div class="flex flex-col lg:flex-row lg:gap-8"> 
+
+    <div class="w-full lg:w-1/3 mb-8 lg:mb-0">
+        <div class="rounded-lg border border-black/10 bg-white p-6 shadow-sm max-w-lg lg:max-w-none">
+            <h2 class="text-xl font-semibold mb-4">Registrar Nuevo Empleado</h2>
+            
+            <form method="post" id="empleadoForm">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label for="rol_selector" class="block text-sm font-medium text-black/80 mb-1">{{ form.idRol.label }}<span class="text-red-500 ml-1">*</span></label>
+                    
+                    {% with form.idRol as id_rol_field %}
+                        <input type="hidden" name="{{ id_rol_field.name }}" id="id_idRol" value="{{ id_rol_field.value|default_if_none:'' }}" required>
+                    {% endwith %}
+
+                    
+                    <div class="relative">
+                        <button type="button" id="rol_selector" data-dropdown-toggle="rol_dropdown" 
+                                class="w-full text-left bg-white border border-black/20 rounded-md py-2 pr-10 pl-3 text-sm focus:border-brand focus:ring-brand outline-none transition-colors flex justify-between items-center hover:bg-black/5" 
+                                aria-expanded="false" aria-controls="rol_dropdown" data-current-value="{{ form.idRol.value|default_if_none:'' }}">
+                            <span id="selected_rol_text">Seleccionar Rol</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-black/50 transition-transform duration-200"></i>
+                        </button>
+
+                        <div id="rol_dropdown" class="absolute z-10 hidden w-full mt-1 bg-white border border-black/10 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {% for choice in form.idRol.field.queryset %}
+                                <div class="p-2 text-sm text-black/80 hover:bg-brand/10 hover:text-brand transition-colors cursor-pointer rol-option" 
+                                     data-value="{{ choice.pk }}" 
+                                     data-text="{{ choice }}">
+                                    {{ choice }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% if form.idRol.errors %}
+                        {% for error in form.idRol.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">{{ form.nombre.label }}<span class="text-red-500 ml-1">*</span></label>
+                    {{ form.nombre|add_class:"w-full border border-black/20 rounded-md p-2 text-sm focus:border-brand focus:ring-brand outline-none transition-colors"|attr:"required:true" }}
+                    {% if form.nombre.errors %}
+                        {% for error in form.nombre.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.apellido.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">{{ form.apellido.label }}<span class="text-red-500 ml-1">*</span></label>
+                    {{ form.apellido|add_class:"w-full border border-black/20 rounded-md p-2 text-sm focus:border-brand focus:ring-brand outline-none transition-colors"|attr:"required:true" }}
+                    {% if form.apellido.errors %}
+                        {% for error in form.apellido.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label for="{{ form.dni.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">{{ form.dni.label }}<span class="text-red-500 ml-1">*</span></label>
+                    {{ form.dni|add_class:"w-full border border-black/20 rounded-md p-2 text-sm focus:border-brand focus:ring-brand outline-none transition-colors"|attr:"required:true,id:id_dni,type:text,placeholder:Ej: 12.345.678 o 123.456.789" }}
+                    {% if form.dni.errors %}
+                        {% for error in form.dni.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
+                <button type="submit"
+                        class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors mt-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+                    Registrar Empleado
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="w-full lg:w-2/3"> 
+        <h2 class="text-xl font-semibold tracking-tight mb-4 lg:mt-0 mt-8">Listado de Empleados</h2>
+        
+        {% if empleados %}
+        <div class="overflow-x-auto rounded-lg border border-black/10 shadow-md">
+            <table id="tablaEmpleados" class="min-w-full divide-y divide-black/10 bg-white">
+                <thead>
+                    <tr class="bg-black/5">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Nombre Completo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">DNI</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Rol</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-black/5">
+                    {% for empleado in empleados %}
+                    <tr class="hover:bg-brand/5 transition-colors empleado-row">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-brand">{{ empleado.idEmpleado }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ empleado.nombre|title }} {{ empleado.apellido|title }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90" data-dni="{{ empleado.dni }}"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ empleado.idRol }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pagination-controls" class="flex justify-center items-center gap-4 mt-6">
+            <button id="prev-page" disabled
+                    class="inline-flex items-center rounded-md border border-black/20 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i> Anterior
+            </button>
+            
+            <span id="page-info" class="text-sm font-medium text-black/80">Página 1 de 1</span>
+            
+            <button id="next-page" disabled
+                    class="inline-flex items-center rounded-md border border-black/20 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Siguiente <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+            </button>
+        </div>
+
+        {% else %}
+        <p class="text-sm text-black/70">No hay empleados registrados aún.</p>
+        {% endif %}
+    </div> 
+</div> <script>
+    // **FUNCIÓN DNI MEJORADA:** Permite hasta 10 dígitos y aplica formato XXX.XXX.XXX o XX.XXX.XXX
+    function formatDNI(value) {
+        // 1. Limpia cualquier carácter que no sea un número.
+        let cleaned = ('' + value).replace(/\D/g, ''); 
+        
+        // 2. Limita a 10 dígitos (por si es DNI, CUIT, o un número de 9/10 dígitos).
+        if (cleaned.length > 10) {
+            cleaned = cleaned.substring(0, 10);
+        }
+
+        // 3. Aplica el formato: Separa de a 3 dígitos desde el final.
+        // Utiliza una expresión regular que encuentra grupos de 3 números
+        // desde la derecha y les antepone un punto, excluyendo el inicio.
+        return cleaned.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    }
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- Lógica del DNI (Input y Tabla) ---
+        const dniInput = document.getElementById('id_dni');
+
+        if (dniInput) {
+            dniInput.addEventListener('input', (e) => {
+                e.target.value = formatDNI(e.target.value);
+            });
+            
+            document.getElementById('empleadoForm').addEventListener('submit', (e) => {
+                dniInput.value = dniInput.value.replace(/\./g, '');
+            });
+        }
+        
+        // Aplicar formato a los DNIs en la tabla de listado
+        const dniCells = document.querySelectorAll('#tablaEmpleados tbody td[data-dni]');
+        dniCells.forEach(cell => {
+            const rawDni = cell.getAttribute('data-dni');
+            cell.textContent = formatDNI(rawDni);
+        });
+
+        
+        // --- Lógica de Componente de Selección de Rol ---
+        const selectorButton = document.getElementById('rol_selector');
+        const dropdownMenu = document.getElementById('rol_dropdown');
+        const hiddenInput = document.getElementById('id_idRol');
+        const selectedTextSpan = document.getElementById('selected_rol_text');
+        const chevronIcon = selectorButton ? selectorButton.querySelector('[data-lucide="chevron-down"]') : null;
+        const rolOptions = document.querySelectorAll('.rol-option');
+        
+        if (selectorButton) {
+            selectorButton.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                const isExpanded = selectorButton.getAttribute('aria-expanded') === 'true';
+
+                document.querySelectorAll('[data-dropdown-toggle]:not([aria-expanded="false"])').forEach(btn => {
+                    if (btn !== selectorButton) {
+                        const target = document.getElementById(btn.dataset.dropdownToggle);
+                        target.classList.add('hidden');
+                        btn.setAttribute('aria-expanded', 'false');
+                        const icon = btn.querySelector('[data-lucide="chevron-down"]');
+                        if (icon) icon.classList.remove('rotate-180');
+                    }
+                });
+
+
+                if (isExpanded) {
+                    dropdownMenu.classList.add('hidden');
+                    selectorButton.setAttribute('aria-expanded', 'false');
+                    if (chevronIcon) chevronIcon.classList.remove('rotate-180');
+                } else {
+                    dropdownMenu.style.top = `${selectorButton.offsetHeight + 4}px`;
+                    dropdownMenu.classList.remove('hidden');
+                    selectorButton.setAttribute('aria-expanded', 'true');
+                    if (chevronIcon) chevronIcon.classList.add('rotate-180');
+                }
+            });
+        }
+        
+        rolOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const value = option.dataset.value;
+                const text = option.dataset.text;
+
+                dropdownMenu.classList.add('hidden');
+                if (selectorButton) selectorButton.setAttribute('aria-expanded', 'false');
+                if (chevronIcon) chevronIcon.classList.remove('rotate-180');
+
+                hiddenInput.value = value;
+                selectedTextSpan.textContent = text;
+                if (selectorButton) selectorButton.dataset.currentValue = value;
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (selectorButton && dropdownMenu && !dropdownMenu.contains(e.target) && !selectorButton.contains(e.target)) {
+                dropdownMenu.classList.add('hidden');
+                selectorButton.setAttribute('aria-expanded', 'false');
+                if (chevronIcon) chevronIcon.classList.remove('rotate-180');
+            }
+        });
+        
+        const initialValue = selectorButton ? selectorButton.dataset.currentValue : '';
+        if (initialValue) {
+            const initialOption = document.querySelector(`.rol-option[data-value="${initialValue}"]`);
+            if (initialOption) {
+                selectedTextSpan.textContent = initialOption.dataset.text;
+            } else {
+                 selectedTextSpan.textContent = "Seleccionar Rol"; 
+            }
+        } else {
+            selectedTextSpan.textContent = "Seleccionar Rol"; 
+        }
+
+
+        // --- Lógica de Paginación ---
+        const rows = document.querySelectorAll('.empleado-row');
+        const rowsPerPage = 5;
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        let currentPage = 1;
+
+        const prevButton = document.getElementById('prev-page');
+        const nextButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+
+        function displayPage(page) {
+            currentPage = page;
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+
+            rows.forEach((row, index) => {
+                row.style.display = (index >= start && index < end) ? '' : 'none';
+            });
+
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage === totalPages || totalPages <= 1; 
+            pageInfo.textContent = `Página ${totalPages === 0 ? 0 : currentPage} de ${totalPages}`;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                displayPage(currentPage - 1);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                displayPage(currentPage + 1);
+            }
+        });
+
+        displayPage(1);
+
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
 {% endblock %}

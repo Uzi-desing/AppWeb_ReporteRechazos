@@ -1,159 +1,103 @@
+{% extends "navegacion.html" %}
+{% load static %}
 {% block content %}
-<h2>Listado de Reportes</h2>
 
-<div>
-    <label for="fechaDesde">Desde:</label>
-    <input type="date" id="fechaDesde">
-    <label for="fechaHasta">Hasta:</label>
-    <input type="date" id="fechaHasta">
-    <button id="filtrarFechas">Filtrar</button>
-    <button id="limpiarFiltros">Quitar Filtros</button>
+<h1 class="text-2xl font-semibold tracking-tight mb-6">Listado de Reportes</h1>
+
+<div class="flex flex-col gap-y-4 md:flex-row md:items-center md:justify-between mb-6 p-4 rounded-lg border border-black/10 bg-white shadow-sm w-full">
+    <!-- Filtros por fecha -->
+    <div class="flex flex-col gap-y-3 md:flex-row md:items-center md:gap-x-4 w-full">
+        <p class="text-sm font-medium text-black/80">Filtrar por Fecha:</p>
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <input type="date" id="fechaDesde" class="border border-black/20 rounded-md p-2 text-sm focus:border-brand focus:ring-brand outline-none transition-colors w-full sm:w-auto">
+            <input type="date" id="fechaHasta" class="border border-black/20 rounded-md p-2 text-sm focus:border-brand focus:ring-brand outline-none transition-colors w-full sm:w-auto">
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <button id="filtrarFechas"
+                class="rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors w-full sm:w-auto">
+                Filtrar
+            </button>
+            <button id="limpiarFiltros"
+                class="rounded-md border border-black/20 px-4 py-2 text-sm font-medium text-black/70 hover:bg-black/10 transition-colors w-full sm:w-auto">
+                Quitar
+            </button>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="w-full md:w-[250px]">
+        <label for="buscador" class="sr-only">Buscar:</label>
+        <div class="relative">
+            <input type="text" id="buscador" placeholder="Buscar por cualquier campo..."
+                class="border border-black/20 rounded-md py-2 pl-10 pr-4 text-sm w-full focus:border-brand focus:ring-brand outline-none transition-colors">
+            <i data-lucide="search" class="w-4 h-4 text-black/50 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+        </div>
+    </div>
 </div>
 
-<div>
-    <label for="buscador">Buscar:</label>
-    <input type="text" id="buscador" placeholder="Buscar por cualquier campo...">
+<!-- Tabla -->
+<div class="overflow-x-auto w-full rounded-lg border border-black/10 shadow-md">
+    <table id="tablaReportes" class="min-w-full divide-y divide-black/10 bg-white">
+        <thead>
+            <tr class="bg-black/5 select-none">
+                <th data-ordenable="true" data-col-index="0" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider cursor-pointer hover:bg-black/10 transition-colors group">
+                    <div class="flex items-center justify-between">
+                        <span>N° Reporte</span>
+                        <span class="sort-indicator ml-2 text-black/40 group-hover:text-black/60">⇅</span>
+                    </div>
+                </th>
+                <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Fecha</th>
+                <th data-ordenable="true" data-col-index="2" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider cursor-pointer hover:bg-black/10 transition-colors group">
+                    <div class="flex items-center justify-between">
+                        <span>Cliente</span>
+                        <span class="sort-indicator ml-2 text-black/40 group-hover:text-black/60">⇅</span>
+                    </div>
+                </th>
+                <th data-ordenable="true" data-col-index="3" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider cursor-pointer hover:bg-black/10 transition-colors group">
+                    <div class="flex items-center justify-between">
+                        <span>Obra</span>
+                        <span class="sort-indicator ml-2 text-black/40 group-hover:text-black/60">⇅</span>
+                    </div>
+                </th>
+                <th data-ordenable="true" data-col-index="4" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider cursor-pointer hover:bg-black/10 transition-colors group">
+                    <div class="flex items-center justify-between">
+                        <span>Remito</span>
+                        <span class="sort-indicator ml-2 text-black/40 group-hover:text-black/60">⇅</span>
+                    </div>
+                </th>
+                <th data-ordenable="true" data-col-index="5" class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider cursor-pointer hover:bg-black/10 transition-colors group">
+                    <div class="flex items-center justify-between">
+                        <span>Empleado a Cargo</span>
+                        <span class="sort-indicator ml-2 text-black/40 group-hover:text-black/60">⇅</span>
+                    </div>
+                </th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-black/5" id="tablaBody">
+            {% for reporte in reportes %}
+            <tr class="hover:bg-brand/5 transition-colors cursor-pointer reporte-row" data-url="{% url 'detalle_reporte' reporte.idReporte %}">
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-brand">{{ reporte.idReporte }}</td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ reporte.fecha|date:"Y-m-d" }}</td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ reporte.idCliente.nombre }}</td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ reporte.idObra.nombreObra }}</td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ reporte.remitoRecepcion }}</td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ reporte.idEmpleado }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
-<table id="tablaReportes" border="1">
-    <thead>
-        <tr>
-            <th data-col="0">N° Reporte</th>
-            <th data-col="1">Fecha</th>
-            <th data-col="2">Cliente</th>
-            <th data-col="3">Obras del Cliente</th>
-            <th data-col="4">Remito Recepción</th>
-            <th data-col="5">Empleado a Cargo</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for reporte in reportes %}
-        <tr>
-            <td>{{ reporte.idReporte }}</td>
-            <td>{{ reporte.fecha|date:"Y-m-d" }}</td>
-            <td>{{ reporte.idCliente.nombre }}</td>
-            <td>{{ reporte.idObra.nombreObra }}</td>
-            <td>{{ reporte.remitoRecepcion }}</td>
-            <td>{{ reporte.idEmpleado }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div id="paginacion" class="mt-6 flex justify-center items-center gap-2 text-sm"></div>
 
-<p id="mensajeNoResultados" style="display: none; color: red;">
+<p id="mensajeNoResultados" class="mt-4 text-sm text-red-600 font-medium flex items-center" style="display: none;">
+    <i data-lucide="alert-triangle" class="w-4 h-4 mr-1 inline-block"></i>
     Su reporte no se ha encontrado.
 </p>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const buscador = document.getElementById("buscador");
-    const fechaDesde = document.getElementById("fechaDesde");
-    const fechaHasta = document.getElementById("fechaHasta");
-    const btnFiltrar = document.getElementById("filtrarFechas");
-    const btnLimpiar = document.getElementById("limpiarFiltros");
-    const tabla = document.getElementById("tablaReportes");
-    const filas = tabla.getElementsByTagName("tr");
-    const encabezados = tabla.querySelectorAll("th");
-    const mensajeNoResultados = document.getElementById("mensajeNoResultados");
-    let ordenActual = {};
+{% endblock %}
 
-    // Función para mostrar u ocultar mensaje "sin resultados"
-    function verificarResultados() {
-        let visibles = 0;
-        for (let i = 1; i < filas.length; i++) {
-            if (filas[i].style.display !== "none") visibles++;
-        }
-        mensajeNoResultados.style.display = visibles === 0 ? "block" : "none";
-    }
-
-    // 🔍 Buscador general (incluye ID y todos los campos)
-    buscador.addEventListener("keyup", function() {
-        const texto = buscador.value.toLowerCase();
-        for (let i = 1; i < filas.length; i++) {
-            const celdas = filas[i].getElementsByTagName("td");
-            let coincide = false;
-            for (let j = 0; j < celdas.length; j++) {
-                const textoCelda = celdas[j].textContent.toLowerCase();
-                if (textoCelda.includes(texto)) {
-                    coincide = true;
-                    break;
-                }
-            }
-            filas[i].style.display = coincide ? "" : "none";
-        }
-        verificarResultados();
-    });
-
-    // 📅 Filtro entre fechas
-    btnFiltrar.addEventListener("click", function() {
-        const desde = fechaDesde.value ? new Date(fechaDesde.value) : null;
-        const hasta = fechaHasta.value ? new Date(fechaHasta.value) : null;
-
-        for (let i = 1; i < filas.length; i++) {
-            const celdaFecha = filas[i].getElementsByTagName("td")[1];
-            if (!celdaFecha) continue;
-
-            const fechaTexto = celdaFecha.textContent.trim();
-            const fechaReporte = new Date(fechaTexto);
-            let mostrar = true;
-
-            if (desde && fechaReporte < desde) mostrar = false;
-            if (hasta && fechaReporte > hasta) mostrar = false;
-
-            filas[i].style.display = mostrar ? "" : "none";
-        }
-        verificarResultados();
-    });
-
-    // 🔄 Quitar filtros y buscador
-    btnLimpiar.addEventListener("click", function() {
-        buscador.value = "";
-        fechaDesde.value = "";
-        fechaHasta.value = "";
-        for (let i = 1; i < filas.length; i++) {
-            filas[i].style.display = "";
-        }
-        verificarResultados();
-    });
-
-    // ↕️ Ordenar columnas (asc / desc)
-    encabezados.forEach((th, index) => {
-        th.addEventListener("click", () => {
-            const col = index;
-            const asc = !ordenActual[col]; // alternar orden
-
-            const filasArray = Array.from(tabla.querySelectorAll("tbody tr"));
-
-            filasArray.sort((a, b) => {
-                const aText = a.children[col].textContent.trim();
-                const bText = b.children[col].textContent.trim();
-
-                // Si es número, comparar numéricamente
-                const aNum = parseFloat(aText);
-                const bNum = parseFloat(bText);
-                if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return asc ? aNum - bNum : bNum - aNum;
-                }
-
-                // Si es fecha
-                const aDate = new Date(aText);
-                const bDate = new Date(bText);
-                if (!isNaN(aDate) && !isNaN(bDate)) {
-                    return asc ? aDate - bDate : bDate - aDate;
-                }
-
-                // Comparación alfabética
-                return asc
-                    ? aText.localeCompare(bText)
-                    : bText.localeCompare(aText);
-            });
-
-            ordenActual[col] = asc;
-
-            const tbody = tabla.querySelector("tbody");
-            filasArray.forEach(fila => tbody.appendChild(fila));
-        });
-    });
-});
-</script>
+{% block js %}
+<script src="{% static 'js/tabla_reportes.js' %}"></script>
 {% endblock %}

@@ -1,53 +1,99 @@
-{% block title %}Detalle del Reporte{% endblock %}
+{% extends "navegacion.html" %}
 
 {% block content %}
-<h2>Reporte #{{ reporte.idReporte }} - Cliente: {{ reporte.idCliente.nombre }} 
-   
-        - Obra: {{ reporte.idObra.nombreObra }}
+<h1 class="text-2xl font-semibold tracking-tight mb-2">
+    Reporte <span class="text-brand">#{{ reporte.idReporte }}</span>
+</h1>
+<p class="mb-4 text-sm text-black/80">
+    Cliente: <span class="font-medium">{{ reporte.idCliente.nombre }}</span> - 
+    Obra: <span class="font-medium">{{ reporte.idObra.nombreObra }}</span>
+</p>
 
-</h2>
-<p>Conductor: {{ reporte.idConductor.nombre|title }} {{ reporte.idConductor.apellido|title }}</p>
-<p>Fecha: {{ reporte.fecha }}</p>
-<a href="{% url 'generar_reporte_pdf' reporte.idReporte %}">Generar Pdf</a>
+<div class="mb-6 p-4 rounded-lg border border-black/10 bg-white shadow-sm inline-block">
+    <p class="text-sm">Conductor: <span class="font-medium">{{ reporte.idConductor.nombre|title }} {{ reporte.idConductor.apellido|title }}</span></p>
+    <p class="text-sm">Fecha: <span class="font-medium">{{ reporte.fecha }}</span></p>
+</div>
 
-<h3>Piezas Rechazadas</h3>
+<div class="mb-8">
+    <a href="{% url 'generar_reporte_pdf' reporte.idReporte %}"
+       class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+        <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>
+        Generar PDF
+    </a>
+</div>
+
+<h2 class="text-xl font-semibold tracking-tight mb-4">Piezas Rechazadas</h2>
+
 {% if piezas_rechazadas %}
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Categoría de Pieza</th>
-            <th>Medidas</th>
-            <th>Categoría de Daño</th>
-            <th>Cantidad</th>
-            <th>Observaciones</th>
-            <th>Imagen</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for pieza in piezas_rechazadas %}
-        <tr>
-            <td>{{ pieza.idPieza.idCategoria.descripcion }}</td>
-            
-            <td>{{ pieza.idPieza.medidas }}</td>
-            
-            <td>{{ pieza.idCategoriaDano }}</td>
-            <td>{{ pieza.cantidad }}</td>
-            <td>{{ pieza.observaciones }}</td>
-            <td>
-                {% if pieza.imagen %}
-                    <img src="{% url 'ver_imagen_segura' pieza.idPiezaRechazada %}" width="150">
-                {% else %}
-                    <span class="text-muted">Sin imagen</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-
-
-    </tbody>
-
-</table>
+<div class="overflow-x-auto rounded-lg border border-black/10 shadow-md">
+    <table class="min-w-full divide-y divide-black/10 bg-white">
+        <thead>
+            <tr class="bg-black/5">
+                <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Categoría</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Medidas</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Daño</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Cantidad</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Observaciones</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Imagen</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-black/5">
+            {% for pieza in piezas_rechazadas %}
+            <tr class="hover:bg-brand/5 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ pieza.idPieza.idCategoria.descripcion }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ pieza.idPieza.medidas }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-brand">{{ pieza.idCategoriaDano }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ pieza.cantidad }}</td>
+                <td class="px-6 py-4 text-sm text-black/90 max-w-xs overflow-hidden text-ellipsis">{{ pieza.observaciones }}</td>
+                <td class="px-6 py-4">
+                    {% if pieza.imagen %}
+                        <div id="image-container-{{ pieza.idPiezaRechazada }}" 
+                             class="w-[150px] h-[100px] bg-gray-200 animate-pulse flex items-center justify-center rounded-md overflow-hidden relative">
+                            <i data-lucide="image" class="w-8 h-8 text-gray-400 absolute"></i>
+                            
+                            <img src="{% url 'ver_imagen_segura' pieza.idPiezaRechazada %}" 
+                                 width="150" 
+                                 data-id="{{ pieza.idPiezaRechazada }}"
+                                 onload="removeLoadingAnimation(this)" 
+                                 onerror="showImageError(this)"
+                                 class="hidden object-cover w-full h-full"
+                                 alt="Imagen de la pieza rechazada">
+                        </div>
+                    {% else %}
+                        <span class="text-sm text-black/70">Sin imagen</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% else %}
-<p>No hay piezas rechazadas registradas para este reporte.</p>
+<p class="text-sm text-black/70">No hay piezas rechazadas registradas para este reporte.</p>
 {% endif %}
+
+<script>
+    // Función para ocultar la animación de carga cuando la imagen termina de cargar
+    function removeLoadingAnimation(imgElement) {
+        const container = document.getElementById(`image-container-${imgElement.dataset.id}`);
+        if (container) {
+            container.classList.remove('bg-gray-200', 'animate-pulse', 'flex', 'items-center', 'justify-center');
+            container.classList.add('h-auto');
+            imgElement.classList.remove('hidden');
+            // Ocultar el icono de placeholder
+            const placeholderIcon = container.querySelector('[data-lucide="image"]');
+            if (placeholderIcon) placeholderIcon.style.display = 'none';
+        }
+    }
+
+    // Función para manejar errores de carga de imagen
+    function showImageError(imgElement) {
+        const container = document.getElementById(`image-container-${imgElement.dataset.id}`);
+        if (container) {
+            container.classList.remove('bg-gray-200', 'animate-pulse');
+            container.classList.add('bg-red-100', 'border', 'border-red-400');
+            container.innerHTML = '<span class="text-xs text-red-600 font-medium p-1">Error al cargar</span>';
+        }
+    }
+</script>
 {% endblock %}
