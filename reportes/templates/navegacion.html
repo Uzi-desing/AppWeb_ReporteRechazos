@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Reporte de Rechazos{% endblock %}</title>
+    <link rel="shortcut icon" href="/static/images/logo-ECVA.png" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -25,16 +26,19 @@
                 <div class="flex items-center gap-4">
                     <img src="{% static 'images/logo-ECVA.png' %}" alt="Logo" class="h-8 w-auto">
                     <a href="{% url 'home' %}" class="font-semibold tracking-tight text-black hover:text-brand transition-colors">
-                        Reporte de Rechazo de Andamios Multidireccionales
+                        Sistema de Reporte de Rechazo de Andamios Multidireccionales
                     </a>
                 </div>
                 <ul class="flex items-center gap-3">
                     {% if user.is_authenticated %}
                     <li>
-                        <a href="{% url 'logout' %}"
-                           class="inline-flex items-center rounded-md border border-black px-3 py-1.5 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
-                           Salir
-                        </a>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="inline-flex items-center rounded-md border border-black px-3 py-1.5 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+                                Salir
+                            </button>
+                        </form>
                     </li>
                     {% endif %}
                 </ul>

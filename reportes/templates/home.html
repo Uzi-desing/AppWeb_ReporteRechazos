@@ -3,7 +3,7 @@
 
 {% if request.user.is_authenticated %}
     {% csrf_token %}
-    <p class="mb-4 text-sm text-black/80">Bienvenido <span class="font-medium">{{ request.user.username }}</span></p>
+    <p class="mb-4 text-sm text-black/80">Bienvenido <span class="font-medium">{{ request.user.username }}</span> ¿Qué deseas hacer hoy?</p>
 
     <div class="flex flex-wrap gap-3 mb-8">
         <a href="{% url 'crear_entrega' %}" 
@@ -11,36 +11,37 @@
             <i data-lucide="package" class="w-4 h-4 mr-2"></i>
         Crear Entrega</a>
 
-<a href="{% url 'crear_empleado' %}"
-   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
-  <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
-  Crear Empleado
-</a>
+        <a href="{% url 'tabla_reportes' %}"
+        class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+        <i data-lucide="table" class="w-4 h-4 mr-2"></i>
+        Ver Tabla de Reportes
+        </a>
 
-<a href="{% url 'tabla_reportes' %}"
-   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
-  <i data-lucide="table" class="w-4 h-4 mr-2"></i>
-  Ver tabla de reportes
-</a>
+        <a href="{% url 'crear_empleado' %}"
+        class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+        <i data-lucide="user-plus" class="w-4 h-4 mr-2"></i>
+        Registra Empleado
+        </a>
 
-<a href="{% url 'crear_cliente' %}"
-   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
-  <i data-lucide="users" class="w-4 h-4 mr-2"></i>
-  Crear Cliente
-</a>
+        <a href="{% url 'crear_cliente' %}"
+        class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+        <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+        Registrar Cliente
+        </a>
 
-<a href="{% url 'crear_obra' %}"
-   class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
-  <i data-lucide="hammer" class="w-4 h-4 mr-2"></i>
-  Registrar Obra
-</a>
+        <a href="{% url 'crear_obra' %}"
+        class="inline-flex items-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+        <i data-lucide="hammer" class="w-4 h-4 mr-2"></i>
+        Registrar Obra
+        </a>
     </div>
 
     {% if reporte %}
     <div class="rounded-lg border border-black/10 bg-white p-5 shadow-sm">
-        <h3 class="text-lg font-semibold mb-2">Último reporte registrado: <span class="text-brand">#{{ reporte.idReporte }}</span></h3>
+        <h3 class="text-lg font-semibold mb-2">Último reporte registrado: <span class="text-brand">Reporte N°{{ reporte.idReporte }}</span></h3>
         <p class="text-sm">Cliente: <span class="font-medium">{{ reporte.idCliente.nombre }}</span></p>
-        <p class="text-sm mb-4">Conductor: <span class="font-medium">{{ reporte.idConductor.nombre }} {{ reporte.idConductor.apellido }}</span></p>
+        <p class="text-sm">Empleado Encargado: <span class="font-medium">{{ reporte.idEmpleado.nombre|title }} {{ reporte.idEmpleado.apellido|title }}</span></p>
+        <p class="text-sm mb-4">Conductor: <span class="font-medium">{{ reporte.idConductor.nombre|title }} {{ reporte.idConductor.apellido|title }}</span></p>
         <a href="{% url 'detalle_reporte' reporte.idReporte %}"
            class="inline-flex items-center rounded-md border border-black px-3 py-1.5 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
             Ver detalles
@@ -64,6 +65,15 @@
     </li>
 
 {% endif %}
+
+<footer class="mt-16 pt-8 border-t border-black/10 text-center">
+    <p class="text-xs text-black/70">
+        © 2025 Sistema de Reporte de Rechazo de Andamios Multidireccionales.
+    </p>
+    <p class="text-xs text-black/50 mt-1">
+        Desarrollado para Uziel Cares.
+    </p>
+</footer>
 
 
 {% endblock%}

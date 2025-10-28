@@ -1,40 +1,96 @@
+{% extends "navegacion.html" %}
+{% load static %}
+
 {% block content %}
-<h2>Registrar Nueva Entrega</h2>
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div class="mb-3">{{ form.remitoRecepcion.label_tag }} {{ form.remitoRecepcion }}</div>
-    <div class="mb-3">{{ form.idEmpleado.label_tag }} {{ form.idEmpleado }}</div>
-    <div class="mb-3">{{ form.idCliente.label_tag }} {{ form.idCliente }}</div>
-    <div class="mb-3">{{ form.idObra.label_tag }} {{ form.idObra }}</div>
+<h1 class="text-2xl font-semibold tracking-tight mb-6">Registrar Nueva Entrega</h1>
 
-    <h4>Datos del Conductor</h4>
-    <div class="mb-3">{{ form.nombreConductor.label_tag }} {{ form.nombreConductor }}</div>
-    <div class="mb-3">{{ form.apellidoConductor.label_tag }} {{ form.apellidoConductor }}</div>
-    <div class="mb-3">{{ form.patenteConductor.label_tag }} {{ form.patenteConductor }}</div>
-    <div class="mb-3">{{ form.transporteConductor.label_tag }} {{ form.transporteConductor }}</div>
+<div class="p-6 rounded-lg border border-black/10 bg-white shadow-md w-full max-w-4xl mx-auto">
+    
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        
+        <h2 class="text-xl font-semibold mb-4 border-b border-black/10 pb-2">Información de la Entrega</h2>
+        
+        <div class="mb-4">
+            <label for="{{ form.remitoRecepcion.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                {{ form.remitoRecepcion.label }}<span class="text-red-500 ml-1">*</span>
+            </label>
+            {{ form.remitoRecepcion }}
+        </div>
+        
+        <div class="mb-4">
+            <label for="{{ form.idEmpleado.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                {{ form.idEmpleado.label }}<span class="text-red-500 ml-1">*</span>
+            </label>
+            {{ form.idEmpleado }}
+        </div>
 
-    <button type="submit" class="btn btn-primary">Guardar Entrega</button>
-</form>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="mb-4 md:mb-0">
+                <label for="{{ form.idCliente.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                    {{ form.idCliente.label }}<span class="text-red-500 ml-1">*</span>
+                </label>
+                {{ form.idCliente }}
+            </div>
+            
+            <div class="mb-4 md:mb-0">
+                <label for="{{ form.idObra.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                    {{ form.idObra.label }}<span class="text-red-500 ml-1">*</span>
+                </label>
+                {{ form.idObra }}
+            </div>
+        </div>
+
+        
+        <h2 class="text-xl font-semibold mt-8 mb-4 border-b border-black/10 pb-2">Datos del Conductor</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="mb-4 md:mb-0">
+                <label for="{{ form.nombreConductor.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                    {{ form.nombreConductor.label }}<span class="text-red-500 ml-1">*</span>
+                </label>
+                {{ form.nombreConductor }}
+            </div>
+            
+            <div class="mb-4 md:mb-0">
+                <label for="{{ form.apellidoConductor.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                    {{ form.apellidoConductor.label }}<span class="text-red-500 ml-1">*</span>
+                </label>
+                {{ form.apellidoConductor }}
+            </div>
+            
+            <div class="mb-4 md:mb-0">
+                <label for="{{ form.patenteConductor.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                    {{ form.patenteConductor.label }}<span class="text-red-500 ml-1">*</span>
+                </label>
+                {{ form.patenteConductor }}
+            </div>
+            
+            <div class="mb-4 md:mb-0">
+                <label for="{{ form.transporteConductor.id_for_label }}" class="block text-sm font-medium text-black/80 mb-1">
+                    {{ form.transporteConductor.label }}<span class="text-red-500 ml-1">*</span>
+                </label>
+                {{ form.transporteConductor }}
+            </div>
+        </div>
+        
+
+        <button type="submit"
+            class="mt-6 w-full inline-flex items-center justify-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+            <i data-lucide="package-plus" class="w-4 h-4 mr-2"></i>
+            Guardar Entrega
+        </button>
+    </form>
+</div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$(document).ready(function(){
-    $('#id_idCliente').change(function(){
-        var cliente_id = $(this).val();
-        $.ajax({
-            url: "{% url 'get_obras' %}",
-            data: {'cliente_id': cliente_id},
-            success: function(data){
-                var obra_select = $('#id_idObra');
-                obra_select.empty();
-                obra_select.append('<option value="">---------</option>');
-                $.each(data, function(index, obra){
-                    obra_select.append('<option value="'+obra.idObra+'">'+obra.nombreObra+'</option>');
-                });
-            }
-        });
-    });
-});
+    const OBRAS_URL = "{% url 'get_obras' %}";
 </script>
+
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'js/obras_clientes.js' %}"></script>
 {% endblock %}

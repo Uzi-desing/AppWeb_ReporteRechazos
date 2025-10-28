@@ -1,10 +1,33 @@
+{% extends "navegacion.html" %}
+{% load static %}
+
 {% block content %}
-<h2>Registrar nueva Obra</h2>
+<div class="w-full max-w-xl mx-auto mt-8">
+    
+    <h1 class="text-2xl font-semibold tracking-tight mb-6 text-black/90">
+        Registrar Nueva Obra
+    </h1>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Guardar</button>
-</form>
+    <div class="p-6 rounded-lg border border-black/10 bg-white shadow-md">
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            {# Renderizar campos uno por uno para tener más control #}
+            {# Si usas {{ form.as_p }}, el siguiente JS lo estilizará #}
+            
+            {{ form.as_p }}
+            
+            <button type="submit" 
+                    class="w-full inline-flex items-center justify-center rounded-md border border-brand bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors shadow-md mt-6">
+                <i data-lucide="building" class="w-4 h-4 mr-2"></i>
+                Guardar Obra
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
 
+{% block js %}
+<script src="{% static 'js/crear_obra.js' %}"></script>
 {% endblock %}

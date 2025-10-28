@@ -1,8 +1,90 @@
+{% extends "navegacion.html" %}
+{% load static %}
 {% block content %}
-<h2>Registrar Nuevo Cliente</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form }}
-    <button type="submit">Guardar Cliente</button>
-</form>
+<h1 class="text-2xl font-semibold tracking-tight mb-6">Registro de Cliente</h1>
+
+<div class="flex flex-col lg:flex-row lg:gap-8">
+    <!-- Formulario de registro -->
+    <div class="w-full lg:w-1/3 mb-8 lg:mb-0">
+        <div class="rounded-lg border border-black/10 bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-semibold mb-4">Registrar Nuevo Cliente</h2>
+
+            <form method="post" id="clienteForm" class="space-y-4">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="flex flex-col">
+                    <label for="{{ field.id_for_label }}" class="text-sm font-medium text-black/80 mb-1">
+                        {{ field.label }}<span class="text-red-500 ml-1">*</span>
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <button type="submit"
+                    class="mt-4 w-full inline-flex items-center justify-center rounded-md border border-black px-4 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors">
+                    <i data-lucide="building" class="w-4 h-4 mr-2"></i>
+                    Guardar Cliente
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listado de clientes -->
+    <div class="w-full lg:w-2/3">
+        <h2 class="text-xl font-semibold tracking-tight mb-4 lg:mt-0 mt-8">Listado de Clientes</h2>
+
+        {% if clientes %}
+        <div class="overflow-x-auto rounded-lg border border-black/10 shadow-md">
+            <table id="tablaClientes" class="min-w-full divide-y divide-black/10 bg-white">
+                <thead>
+                    <tr class="bg-black/5">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Nombre</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Domicilio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-black/80 uppercase tracking-wider">Télefono</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-black/5" id="clientesBody">
+                    {% for cliente in clientes %}
+                    <tr class="hover:bg-brand/5 transition-colors cliente-row">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-brand">{{ cliente.idCliente }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ cliente.nombre|title }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">{{ cliente.domicilio }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-black/90">+54 {{ cliente.telefono }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div id="pagination-controls" class="flex justify-center items-center gap-4 mt-6">
+            <button id="prev-page" disabled
+                class="inline-flex items-center rounded-md border border-black/20 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i> Anterior
+            </button>
+
+            <span id="page-info" class="text-sm font-medium text-black/80">Página 1 de 1</span>
+
+            <button id="next-page" disabled
+                class="inline-flex items-center rounded-md border border-black/20 px-3 py-1.5 text-sm font-medium text-black/70 hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Siguiente <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+            </button>
+        </div>
+        {% else %}
+        <div class="p-4 bg-white border border-black/10 rounded-lg shadow-sm">
+            <p class="text-sm text-black/70">No hay clientes registrados aún.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/crear_cliente.js' %}"></script>
 {% endblock %}

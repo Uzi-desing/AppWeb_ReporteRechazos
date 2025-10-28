@@ -123,6 +123,11 @@ class EmpleadoForm(forms.ModelForm):
         
 
 class ClienteForm(forms.ModelForm):
+    telefono = forms.RegexField(
+        regex=r'^\d+$',
+        error_messages={'invalid': 'Solo se permiten números.'}
+    )
+
     class Meta:     
         model = Cliente
         fields = ['idCliente', 'nombre', 'telefono', 'domicilio']

@@ -28,6 +28,9 @@ from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+
+
 
 
 
@@ -60,6 +63,7 @@ def login_view(request):
         login(request, usuario)
         return redirect('home')
     
+@require_POST
 def logout_view(request):
     logout(request)
     return redirect('login')
@@ -152,7 +156,7 @@ def crear_piezas_rechazadas(request, reporte_id):
     })
     
 
-
+@never_cache
 @login_required
 @require_GET
 def detalle_reporte(request, reporte_id):
@@ -169,9 +173,11 @@ def detalle_reporte(request, reporte_id):
 
     return HttpResponseNotAllowed(['GET'])    
     
+
+
+@never_cache
 @login_required
 @require_http_methods(["GET", "POST"])
-@login_required
 def crear_empleado(request):
     empleados = Empleado.objects.all()
     
@@ -196,6 +202,9 @@ def crear_empleado(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def crear_cliente(request):
+    
+    clientes = Cliente.objects.all()
+    
     if request.method == 'POST':
         form = ClienteForm(request.POST)
         if form.is_valid():
@@ -205,7 +214,7 @@ def crear_cliente(request):
     else: 
         form = ClienteForm()
         
-    return render(request, 'crear_cliente.html', {'form': form})
+    return render(request, 'crear_cliente.html', {'form': form, 'clientes': clientes})
             
 @login_required
 @require_http_methods(["GET", "POST"])

@@ -1,8 +1,8 @@
 {% extends "navegacion.html" %}
-
+{% load static %}
 {% block content %}
 <h1 class="text-2xl font-semibold tracking-tight mb-2">
-    Reporte <span class="text-brand">#{{ reporte.idReporte }}</span>
+    Reporte <span class="text-brand">N°{{ reporte.idReporte }}</span>
 </h1>
 <p class="mb-4 text-sm text-black/80">
     Cliente: <span class="font-medium">{{ reporte.idCliente.nombre }}</span> - 
@@ -10,6 +10,8 @@
 </p>
 
 <div class="mb-6 p-4 rounded-lg border border-black/10 bg-white shadow-sm inline-block">
+    <p class="text-sm">Empleado Encargado: <span class="font-medium">{{ reporte.idEmpleado.nombre|title }} {{ reporte.idEmpleado.apellido|title }}</span></p>
+    <p class="text-sm">Remito Recepción: <span class="font-medium">{{ reporte.remitoRecepcion }}</span></p>
     <p class="text-sm">Conductor: <span class="font-medium">{{ reporte.idConductor.nombre|title }} {{ reporte.idConductor.apellido|title }}</span></p>
     <p class="text-sm">Fecha: <span class="font-medium">{{ reporte.fecha }}</span></p>
 </div>
@@ -71,29 +73,10 @@
 {% else %}
 <p class="text-sm text-black/70">No hay piezas rechazadas registradas para este reporte.</p>
 {% endif %}
-
-<script>
-    // Función para ocultar la animación de carga cuando la imagen termina de cargar
-    function removeLoadingAnimation(imgElement) {
-        const container = document.getElementById(`image-container-${imgElement.dataset.id}`);
-        if (container) {
-            container.classList.remove('bg-gray-200', 'animate-pulse', 'flex', 'items-center', 'justify-center');
-            container.classList.add('h-auto');
-            imgElement.classList.remove('hidden');
-            // Ocultar el icono de placeholder
-            const placeholderIcon = container.querySelector('[data-lucide="image"]');
-            if (placeholderIcon) placeholderIcon.style.display = 'none';
-        }
-    }
-
-    // Función para manejar errores de carga de imagen
-    function showImageError(imgElement) {
-        const container = document.getElementById(`image-container-${imgElement.dataset.id}`);
-        if (container) {
-            container.classList.remove('bg-gray-200', 'animate-pulse');
-            container.classList.add('bg-red-100', 'border', 'border-red-400');
-            container.innerHTML = '<span class="text-xs text-red-600 font-medium p-1">Error al cargar</span>';
-        }
-    }
-</script>
 {% endblock %}
+
+
+{% block js %}
+    <script src="{% static 'js/detalle_reporte.js' %}"></script>
+{% endblock %}
+

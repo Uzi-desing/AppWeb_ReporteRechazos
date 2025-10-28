@@ -1,71 +1,88 @@
-{% block title %}Registrar Piezas Rechazadas{% endblock %}
+{% extends "navegacion.html" %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Registrar Piezas Rechazadas para el Reporte #{{ reporte.idReporte }}</h2>
+<div class="w-full max-w-6xl mx-auto mt-8">
+    
+    <h1 class="text-2xl font-semibold tracking-tight mb-6 text-black/90">
+        Registrar Piezas Rechazadas para el Reporte <span class="text-brand font-bold">N°{{ reporte.idReporte }}</span>
+    </h1>
 
-    <form method="post" enctype="multipart/form-data" id="piezas-form">
-        {% csrf_token %}
-        {{ formset.management_form }}
-
-        <table class="table table-bordered table-striped align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Pieza (Categoría / Medidas)</th>
-                    <th>Categoría de Daño</th>
-                    <th>Cantidad</th>
-                    <th>Observaciones</th>
-                    <th>Imagen</th>
-                    <th>Eliminar</th> </tr>
-            </thead>
-            <tbody id="formset-tbody">
-                {% for form in formset %}
-                <tr class="form-row" data-prefix="{{ form.prefix }}">
-                    <td>{{ form.idPieza }}</td>
-                    <td>{{ form.idCategoriaDano }}</td>
-                    <td>{{ form.cantidad }}</td>
-                    <td>{{ form.observaciones }}</td>
-                    <td>{{ form.imagen }}</td>
-                    <td class="text-center delete-cell">
-                        {{ form.id }} 
-                        
-                        {% if form.instance.pk %}
-                            {{ form.DELETE }}
-                            <label for="{{ form.DELETE.id_for_label }}" class="form-check-label">Sí</label>
-                        {% else %}
-                            <button type="button" class="btn btn-sm btn-outline-danger remove-row">
-                                Quitar
-                            </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <button type="button" class="btn btn-info mb-3" id="add-form-row">
-            <i class="fas fa-plus"></i> Añadir otra Pieza
-        </button>
+    <div class="p-6 rounded-lg border border-black/10 bg-white shadow-md">
         
-        <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-primary">Guardar Piezas</button>
-        </div>
-    </form>
+        <form method="post" enctype="multipart/form-data" id="piezas-form">
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            <div class="overflow-x-auto border border-black/10 rounded-lg">
+                <table class="w-full text-sm text-left text-black/80">
+                    <thead class="text-xs text-white uppercase bg-black/80">
+                        <tr>
+                            <th scope="col" class="px-3 py-3 font-medium tracking-wider w-1/5">Pieza (Categoría / Medidas)</th>
+                            <th scope="col" class="px-3 py-3 font-medium tracking-wider w-1/5">Categoría de Daño</th>
+                            <th scope="col" class="px-3 py-3 font-medium tracking-wider w-1/12">Cantidad</th>
+                            <th scope="col" class="px-3 py-3 font-medium tracking-wider w-1/4">Observaciones</th>
+                            <th scope="col" class="px-3 py-3 font-medium tracking-wider w-1/6">Imagen</th>
+                            <th scope="col" class="px-3 py-3 font-medium tracking-wider w-1/12 text-center">Eliminar</th> 
+                        </tr>
+                    </thead>
+                    <tbody id="formset-tbody">
+                        {% for form in formset %}
+                        <tr class="form-row border-b border-black/10 hover:bg-black/5 transition-colors 
+                                   {% if form.DELETE.value %}bg-red-50/50{% endif %}" 
+                            data-prefix="{{ form.prefix }}">
+                            <td class="px-3 py-2">{{ form.idPieza }}</td>
+                            <td class="px-3 py-2">{{ form.idCategoriaDano }}</td>
+                            <td class="px-3 py-2">{{ form.cantidad }}</td>
+                            <td class="px-3 py-2">{{ form.observaciones }}</td>
+                            <td class="px-3 py-2">{{ form.imagen }}</td>
+                            <td class="px-3 py-2 text-center delete-cell">
+                                {{ form.id }} 
+                                
+                                {% if form.instance.pk %}
+                                    {{ form.DELETE }}
+                                    <label for="{{ form.DELETE.id_for_label }}" class="text-xs text-red-600 font-medium ml-1 cursor-pointer">Marcar para eliminar</label>
+                                {% else %}
+                                    <button type="button" class="inline-flex items-center text-xs px-2 py-1 rounded border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors remove-row">
+                                        <i data-lucide="x" class="w-3 h-3 mr-1"></i>Quitar
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" 
+                    class="mt-4 inline-flex items-center rounded-md border border-black/50 px-3 py-2 text-sm font-medium text-black hover:bg-brand hover:border-brand hover:text-white transition-colors" 
+                    id="add-form-row">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Añadir otra Pieza
+            </button>
+                    
+            <div class="flex justify-end pt-6 border-t border-black/10 mt-6">
+                <button type="submit" 
+                        class="inline-flex items-center rounded-md bg-brand border border-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors shadow-md">
+                    <i data-lucide="save" class="w-4 h-4 mr-2"></i> Guardar Piezas
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <template id="empty-form-template">
     {% with formset.empty_form as form %}
-    <tr class="form-row new-form" data-prefix="__prefix__">
-        <td>{{ form.idPieza }}</td>
-        <td>{{ form.idCategoriaDano }}</td>
-        <td>{{ form.cantidad }}</td>
-        <td>{{ form.observaciones }}</td>
-        <td>{{ form.imagen }}</td>
-        <td class="text-center delete-cell">
+    <tr class="form-row new-form border-b border-black/10 hover:bg-black/5 transition-colors" data-prefix="__prefix__">
+        <td class="px-3 py-2">{{ form.idPieza }}</td>
+        <td class="px-3 py-2">{{ form.idCategoriaDano }}</td>
+        <td class="px-3 py-2">{{ form.cantidad }}</td>
+        <td class="px-3 py-2">{{ form.observaciones }}</td>
+        <td class="px-3 py-2">{{ form.imagen }}</td>
+        <td class="px-3 py-2 text-center delete-cell">
             {{ form.id }}
             {{ form.DELETE }}
-            <button type="button" class="btn btn-sm btn-outline-danger remove-row">
-                Quitar
+            <button type="button" class="inline-flex items-center text-xs px-2 py-1 rounded border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition-colors remove-row">
+                <i data-lucide="x" class="w-3 h-3 mr-1"></i>Quitar
             </button>
         </td>
     </tr>
@@ -73,72 +90,8 @@
 </template>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-$(document).ready(function() {
-    const $managementForm = $('#id_form-TOTAL_FORMS');
-    const $formsetTbody = $('#formset-tbody');
-    const $addButton = $('#add-form-row');
-    const $emptyTemplate = $('#empty-form-template');
+{% endblock %}
 
-    // Función para añadir nueva fila
-    function addFormRow() {
-        let totalForms = parseInt($managementForm.val());
-        const newRowContent = $emptyTemplate.html();
-        const $newRow = $(newRowContent);
-
-        // Reemplazar '__prefix__' por el nuevo índice en el HTML de la nueva fila
-        const tempRegex = /__prefix__/g;
-        $newRow.html($newRow.html().replace(tempRegex, totalForms));
-        $newRow.attr('data-prefix', `form-${totalForms}`);
-
-        // Limpiar inputs del nuevo formulario (Mantenemos la lógica de limpieza solo para la fila nueva)
-        $newRow.find(':input').each(function() {
-            if ($(this).is(':checkbox')) {
-                $(this).prop('checked', false);
-            } else if (!$(this).is(':hidden') && !$(this).is(':file')) {
-                $(this).val('');
-            }
-        });
-
-        $formsetTbody.append($newRow);
-        // Incrementar TOTAL_FORMS sin reindexar filas existentes
-        $managementForm.val(totalForms + 1);
-    }
-
-    // Eliminar fila sin reindexar: marcar DELETE si existe; si no, remover y ajustar TOTAL_FORMS si era la última
-    $formsetTbody.on('click', '.remove-row', function() {
-        if (!confirm("¿Estás seguro de que quieres quitar esta fila?")) return;
-
-        const $row = $(this).closest('.form-row');
-        const $deleteInput = $row.find('input[type="checkbox"][name$="-DELETE"]');
-
-        if ($deleteInput.length) {
-            $deleteInput.prop('checked', true);
-            $row.hide();
-        } else {
-            const totalForms = parseInt($managementForm.val());
-            const isLast = ($row.index() === $formsetTbody.find('.form-row').length - 1);
-            $row.remove();
-            if (isLast) {
-                $managementForm.val(Math.max(0, totalForms - 1));
-            }
-        }
-    });
-
-    // Estilo visual de eliminación
-    $formsetTbody.on('change', 'input[type="checkbox"][name$="-DELETE"]', function() {
-        const $row = $(this).closest('.form-row');
-        $row.toggleClass('table-danger', this.checked);
-    });
-
-    // Aplicar estilo al cargar (para formularios preexistentes)
-    $('input[type="checkbox"][name$="-DELETE"]:checked').each(function() {
-        $(this).closest('.form-row').addClass('table-danger');
-    });
-
-    // Botón para añadir fila
-    $addButton.on('click', addFormRow);
-});
-</script>
-
+{% block js %}
+    <script src="{% static 'js/crear_pieza_rechazada.js' %}"></script>
 {% endblock %}
