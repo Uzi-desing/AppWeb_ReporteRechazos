@@ -31,10 +31,6 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 
 
-
-
-
-
 # Create your views here.
 @never_cache
 @login_required
@@ -271,150 +267,239 @@ def generar_reporte_pdf(request, reporte_id):
     
     try:
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename=Reporte{reporte.idReporte}.pdf'
+        response['Content-Disposition'] = f'attachment; filename=Reporte_ECVA_{reporte.idReporte}.pdf'
         buffer = BytesIO()
-    
+        
         c = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
         
-        c.setFillColor(colors.HexColor("#002b36"))
-        c.rect(0, height - 80, width, 80, fill=1, stroke=0)
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 18)
-        c.drawCentredString(width / 2, height - 50, f"REPORTE DE DAÑOS N° {reporte.idReporte}")
-
-        # 🔹 Datos generales del reporte
-        c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", 13)
-        c.drawString(50, height - 110, "Datos del Reporte:")
-
-        c.setFont("Helvetica", 11)
-        c.drawString(70, height - 130, f"Fecha: {reporte.fecha.strftime('%d/%m/%Y')}")
-        c.drawString(70, height - 145, f"Remito Recepción: {reporte.remitoRecepcion}")
-        c.drawString(70, height - 160, f"Cliente: {reporte.idCliente.nombre}")
-        c.drawString(70, height - 175, f"Obra: {reporte.idObra.nombreObra}")
-        c.drawString(70, height - 190, f"Responsable: {reporte.idEmpleado.nombre.title()} {reporte.idEmpleado.apellido.title()}")
-
-        y = height - 220
-
-        # 🔹 Tabla de piezas rechazadas
-        c.setFont("Helvetica-Bold", 13)
-        c.drawString(50, y, "Piezas Rechazadas:")
-        y -= 20
-
-        if not piezasRechazadas:
-            c.setFont("Helvetica-Oblique", 11)
-            c.drawString(70, y, "No hay piezas rechazadas registradas para este reporte.")
-        else:
-            # Datos de tabla
-            data = [["Categoría Pieza", "Medida", "Cantidad", "Categoría Daño", "Observaciones"]]
-            for p in piezasRechazadas:
-                data.append([
-                    str(p.idPieza.idCategoria.descripcion),
-                    str(p.idPieza.medidas),
-                    str(p.cantidad),
-                    str(p.idCategoriaDano),
-                    (p.observaciones or "Ninguna"),
-                ])
-
-            # Estilo y formato
-            table = Table(data, colWidths=[100, 90, 60, 100, 120])
-            table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#073642")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                ("GRID", (0, 0), (-1, -1), 0.5, colors.gray),
-                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONT", (0, 1), (-1, -1), "Helvetica"),
-                ("FONTSIZE", (0, 0), (-1, -1), 10),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
-            ]))
-
-            # Dibujar tabla
-            table.wrapOn(c, width, y)
-            table_height = table._height
-            table.drawOn(c, 50, y - table_height)
-            y -= (table_height + 20)
-
-            # 🔹 Imágenes de piezas (si existen)
-            for pieza in piezasRechazadas:
-                if y < 200:
-                    c.showPage()
-                    y = height - 100
-                    c.setFont("Helvetica-Bold", 13)
-                    c.drawString(50, y, "Piezas Rechazadas:")
-                    y -= 30
-
-                c.setFont("Helvetica-Bold", 11)
-                c.drawString(50, y, f"Pieza: {pieza.idPieza.idCategoria.descripcion} ({pieza.cantidad} u.)")
-                y -= 15
-
-                if pieza.imagen:
-                    try:
-                        sas_url = generar_url_sas(pieza.imagen.name, expira_en_min=3)
-                        resp = requests.get(sas_url)
-                        resp.raise_for_status()
-
-                        img_data = BytesIO(resp.content)
-                        img = ImageReader(img_data)
-
-                        ancho, alto = 180, 120
-                        c.drawImage(img, 70, y - alto, width=ancho, height=alto, preserveAspectRatio=True)
-                        y -= alto + 20
-                    except Exception as e:
-                        c.setFont("Helvetica-Oblique", 10)
-                        c.drawString(70, y, f"(Error al cargar imagen: {e.__class__.__name__})")
-                        y -= 20
-                else:
-                    c.setFont("Helvetica-Oblique", 10)
-                    c.drawString(70, y, "(Sin imagen)")
-                    y -= 20
-
-        # 🔹 Datos del chofer
-        if y < 180:
-            c.showPage()
-            y = height - 100
-
-        c.setFont("Helvetica-Bold", 13)
-        c.drawString(50, y, "Datos del Chofer:")
-        y -= 25
-
-        c.setFont("Helvetica", 11)
-        c.drawString(70, y, f"Transporte: {reporte.idConductor.transporte.title()}")
-        y -= 18
-        c.drawString(70, y, f"Patente: {reporte.idConductor.patente.upper()}")
-        y -= 18
-        c.drawString(70, y, f"Nombre y Apellido: {reporte.idConductor.nombre.title()} {reporte.idConductor.apellido.title()}")
-        y -= 30
-        c.drawString(70, y, "Firma: __________________________")
-
-        # 🔹 Pie de página
-        c.setStrokeColor(colors.gray)
-        c.line(50, 50, width - 50, 50)
-        c.setFont("Helvetica-Oblique", 9)
-        c.setFillColor(colors.gray)
-        c.drawCentredString(width / 2, 35, "Sistema de Reportes de Daños © 2025 - Uso Interno")
-
+        # ========== ENCABEZADO ==========
+        # Rectángulos del header
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(1.5)
         
+        # Rectángulo izquierdo - "DOCUMENTOS DEL SIG"
+        c.rect(50, height - 100, 150, 50)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(60, height - 70, "DOCUMENTOS DEL SIG")
+        
+        # Rectángulo central - Logo ECVA
+        c.rect(200, height - 100, 150, 50)
+        try:
+            # Ajusta la ruta según donde tengas tu logo
+            logo_path = 'static/images/logo-ECVA.png'  # o tu ruta
+            logo = ImageReader(logo_path)
+            c.drawImage(logo, 230, height - 95, width=90, height=40, preserveAspectRatio=True, mask='auto')
+        except:
+            c.setFont("Helvetica-Bold", 16)
+            c.drawCentredString(275, height - 75, "ECVA")
+        
+        # Rectángulo derecho - Tipo de documento
+        c.rect(350, height - 100, 195, 50)
+        c.setFont("Helvetica-Bold", 8)
+        c.drawCentredString(447.5, height - 65, "Tipo documento:")
+        c.setFont("Helvetica-Bold", 10)
+        c.drawCentredString(447.5, height - 80, "DOCUMENTO OPERATIVO")
+        
+        # Segunda fila del header
+        c.rect(50, height - 130, 495, 30)
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(60, height - 120, "Rechazo de materiales")
+        
+        
+        # ========== DATOS DEL REPORTE ==========
+        y = height - 160
+        
+        # Primera columna de datos
+        data_fields = [
+            ("OBRA", reporte.idObra.nombreObra),
+            ("REMITO DE RECEPCION", reporte.remitoRecepcion),
+            ("FECHA", reporte.fecha.strftime('%d/%m/%Y')),
+            ("CLIENTE", reporte.idCliente.nombre),
+            ("EMPLEADO", f"{reporte.idEmpleado.nombre} {reporte.idEmpleado.apellido}"),
+        ]
+        
+        for label, value in data_fields:
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(60, y, label)
+            
+            c.setStrokeColor(colors.black)
+            c.setLineWidth(0.5)
+            c.rect(180, y - 5, 150, 18)
+            
+            c.setFont("Helvetica", 9)
+            c.drawString(185, y, str(value) if value else "")
+            
+            y -= 25
+        
+        # INFORME No. (en la esquina superior derecha de esta sección)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(400, height - 160, "INFORME No.")
+        c.rect(480, height - 165, 60, 18)
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(510, height - 160, str(reporte.idReporte))
+        
+        y -= 20
+        
+        # ========== SECCIONES DE PIEZAS RECHAZADAS ==========
+        c.setFont("Helvetica-Bold", 10)
+        
+        for idx, pieza in enumerate(piezasRechazadas, 1):
+            # Verificar si necesitamos nueva página
+            if y < 250:
+                c.showPage()
+                y = height - 80
+            
+            # Header de sección: SOPORTE | MOTIVO
+            c.setStrokeColor(colors.black)
+            c.setLineWidth(1)
+            
+            # SOPORTE
+            c.rect(50, y - 5, 230, 20, fill=1, stroke=1)
+            c.setFillColor(colors.lightgrey)
+            c.rect(50, y - 5, 230, 20, fill=1, stroke=1)
+            c.setFillColor(colors.black)
+            c.setFont("Helvetica-Bold", 10)
+            c.drawCentredString(165, y, "SOPORTE")
+            
+            # MOTIVO
+            c.setFillColor(colors.lightgrey)
+            c.rect(280, y - 5, 265, 20, fill=1, stroke=1)
+            c.setFillColor(colors.black)
+            c.drawCentredString(412.5, y, "MOTIVO")
+            
+            y -= 25
+            
+            # Área de imagen (SOPORTE)
+            c.setStrokeColor(colors.black)
+            c.rect(50, y - 150, 230, 150)
+            
+            if pieza.imagen:
+                try:
+                    sas_url = generar_url_sas(pieza.imagen.name, expira_en_min=3)
+                    resp = requests.get(sas_url)
+                    resp.raise_for_status()
+                    
+                    img_data = BytesIO(resp.content)
+                    img = ImageReader(img_data)
+                    
+                    # Dibujar imagen centrada en el cuadro
+                    c.drawImage(img, 60, y - 145, width=210, height=140, 
+                              preserveAspectRatio=True)
+                except Exception as e:
+                    c.setFont("Helvetica-Oblique", 9)
+                    c.drawString(70, y - 75, f"Error al cargar imagen")
+            else:
+                c.setFont("Helvetica-Oblique", 9)
+                c.drawString(120, y - 75, "(Sin imagen)")
+            
+            # Área de MOTIVO (checkboxes y datos)
+            motivo_y = y
+            
+            # MATERIAL
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(290, motivo_y, "MATERIAL")
+            c.rect(360, motivo_y - 5, 180, 18)
+            c.setFont("Helvetica", 8)
+            pieza_info = f"{pieza.idPieza.idCategoria.descripcion} - {pieza.idPieza.medidas}"
+            c.drawString(365, motivo_y, pieza_info)
+            
+            motivo_y -= 25
+            
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(290, motivo_y, "CANT")
+            c.rect(360, motivo_y - 5, 180, 18)
+            c.setFont("Helvetica", 8)
+            pieza_info = f"{pieza.cantidad} Unidades"
+            c.drawString(365, motivo_y, pieza_info)
+            
+            motivo_y -= 25
+            
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(290, motivo_y, "CAT. DAÑO")
+            c.rect(360, motivo_y - 5, 180, 18)
+            c.setFont("Helvetica", 8)
+            pieza_info = f"{pieza.idCategoriaDano}"
+            c.drawString(365, motivo_y, pieza_info)
+             
+            # Cantidad y observaciones
+            motivo_y -= 25
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(290, motivo_y, "OBSERVACIONES")
+            c.rect(300, motivo_y - 40, 240, 40)
+            
+            c.setFont("Helvetica", 8)
+            obs_text = f"{pieza.observaciones or 'Sin observaciones'}"
+            # Dividir texto si es muy largo
+            if len(obs_text) > 60:
+                c.drawString(310, motivo_y - 15, obs_text[:60])
+                c.drawString(310, motivo_y - 25, obs_text[60:120])
+            else:
+                c.drawString(310, motivo_y - 15, obs_text)
+            
+            y = motivo_y - 60
+            
+            # Línea separadora entre piezas
+            if idx < len(piezasRechazadas):
+                c.setStrokeColor(colors.grey)
+                c.setLineWidth(0.5)
+                c.line(50, y, width - 50, y)
+                y -= 25
+        
+        # ========== DATOS DEL TRANSPORTE ==========
+        if y < 150:
+            c.showPage()
+            y = height - 80
+        
+        y -= 30
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(1.5)
+        c.line(50, y, width - 50, y)
+        y -= 30
+        
+        transport_fields = [
+            ("TRANSPORTE", reporte.idConductor.transporte.title()),
+            ("PATENTE", reporte.idConductor.patente.upper()),
+            ("NOMBRE Y APELLIDO", f"{reporte.idConductor.nombre.title()} {reporte.idConductor.apellido.title()}"),
+        ]
+        
+        for label, value in transport_fields:
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(60, y, label)
+            c.setLineWidth(0.5)
+            c.line(180, y - 3, 400, y - 3)
+            c.setFont("Helvetica", 9)
+            c.drawString(185, y, value)
+            y -= 25
+        
+        
+        # Área de firma
+        y -= 10
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(60, y, "FIRMA")
+        c.line(60, y - 3, 200, y - 3)
+        
+        c.setFont("Helvetica", 8)
+        c.drawString(280, y + 4 , "FIRMA Y ACLARACIÓN")
+        c.drawString(280, y - 3, "CONTROL - RECHAZO")
+        c.line(280, y - 5, width - 60, y - 5 )
+        
+        # Pie de página
+        c.setFont("Helvetica-Oblique", 8)
+        c.setFillColor(colors.grey)
+        c.drawCentredString(width / 2, 5, 
+                           "Sistema de Reportes de Daños © 2025 - Uso Interno")
+        
+        # Guardar PDF
         c.showPage()
         c.save()
+        
         pdf = buffer.getvalue()
         buffer.close()
         response.write(pdf)
-    
+        
         return response
-
+    
     except Exception as e:
         messages.error(request, f'Error al generar PDF: {e}')
-        return redirect ('detalle_reporte', reporte_id=reporte_id)
-    
-
-    
-    
-
-
-    
-    
-
-
-
+        return redirect('detalle_reporte', reporte_id=reporte_id)
