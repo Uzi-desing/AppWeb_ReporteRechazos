@@ -175,3 +175,8 @@ LOGOUT_REDIRECT_URL = 'login'  # Redirige a login después del logout
 SESSION_COOKIE_AGE = 3600  # Sesión expira en 1 hora (3600 segundos)
 SESSION_SAVE_EVERY_REQUEST = True  # Renueva el tiempo de sesión en cada request
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Sesión expira al cerrar navegador
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+]
