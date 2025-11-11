@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build:css": "tailwindcss -i ./static/src/input.css -o ./static/css/tailwind.css --minify",
-    "watch:css": "tailwindcss -i ./static/src/input.css -o ./static/css/tailwind.css --watch",
+    "build:css": "tailwindcss -i ./static/src/input.css -o ./static/css/custom_style.css --minify",
+    "watch:css": "tailwindcss -i ./static/src/input.css -o ./static/css/custom_style --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

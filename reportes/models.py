@@ -76,7 +76,7 @@ class Piezas(models.Model):
     medidas = models.CharField(max_length=100)
     
     def __str__(self):
-        return f'{self.idPieza}'
+        return f'{self.idCategoria.descripcion} {self.medidas}'
     
 class ReporteDano(models.Model):
     idReporte = models.AutoField(primary_key=True)

@@ -8,10 +8,11 @@ from .forms import ReporteDanoForm, EmpleadoForm, PiezaRechazadaForm, PiezaRecha
 from django.contrib import messages
 from django.conf import settings
 from django.http import HttpResponseNotAllowed, Http404
-from .models import UsuarioTransportista, Obras, ReporteDano, PiezaRechazada, Empleado, Cliente
+from .models import UsuarioTransportista, Obras, ReporteDano, PiezaRechazada, Empleado, Cliente, Piezas
 from django.http import JsonResponse
 import uuid, os
 from io import BytesIO
+from django.db.models import Count, Sum
 
 
 #Librerias para ReporLab y Azure
@@ -36,10 +37,36 @@ from reportlab.lib.styles import getSampleStyleSheet
 @login_required
 @require_GET
 def home(request):
-    
+    total_danadas_dict = PiezaRechazada.objects.aggregate(Sum('cantidad'))
+    totalPiezas = total_danadas_dict.get('cantidad__sum') or 0
     ultimoReporte = ReporteDano.objects.last()
+    
+    cliente_mas_reportes_query = ReporteDano.objects \
+        .values('idCliente') \
+        .annotate(num_reportes=Count('idCliente')) \
+        .order_by('-num_reportes') \
+        .first()
+        
+    cliente_mas_reportes = None
+    if cliente_mas_reportes_query:
+        cliente_id = cliente_mas_reportes_query['idCliente']
+        cliente_obj = Cliente.objects.get(pk=cliente_id)
+        
+        cliente_mas_reportes = {
+            'nombre': cliente_obj.nombre,
+            'total_reportes': cliente_mas_reportes_query['num_reportes']
+        }
+
    
-    return render(request, 'home.html', {'reporte': ultimoReporte})
+    ultimoReporte = ReporteDano.objects.last()
+    
+    context = {
+        'reporte': ultimoReporte,
+        'total_piezas': totalPiezas,
+        'cliente_mas_reportes': cliente_mas_reportes
+    }
+        
+    return render(request, 'home.html', context)
 
 @never_cache
 @require_http_methods(["GET", "POST"])
@@ -257,8 +284,6 @@ def ver_imagen_segura(request, pieza_id):
         print(f"Error al cargar imagen: {e}")
         raise Http404("Error al cargar imagen")
 
-
-
 @login_required
 @require_GET
 def generar_reporte_pdf(request, reporte_id):
@@ -273,222 +298,356 @@ def generar_reporte_pdf(request, reporte_id):
         c = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
         
-        # ========== ENCABEZADO ==========
-        # Rectángulos del header
-        c.setStrokeColor(colors.black)
-        c.setLineWidth(1.5)
+        # Márgenes
+        margin_left = 40
+        margin_right = width - 40
+        margin_top = height - 50
         
-        # Rectángulo izquierdo - "DOCUMENTOS DEL SIG"
-        c.rect(50, height - 100, 150, 50)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(60, height - 70, "DOCUMENTOS DEL SIG")
+        # ========== FUNCIÓN AUXILIAR PARA NUEVA PÁGINA ==========
+        def crear_encabezado(canvas_obj, y_pos):
+            """Crea el encabezado en cada página"""
+            c.setStrokeColor(colors.HexColor('#000000'))
+            c.setLineWidth(1.5)
+            
+            # Rectángulo izquierdo - "DOCUMENTOS DEL SIG"
+            c.rect(margin_left, y_pos - 50, 145, 50)
+            c.setFont("Helvetica-Bold", 9)
+            c.drawCentredString(margin_left + 72.5, y_pos - 30, "DOCUMENTOS DEL SIG")
+            
+            # Rectángulo central - Logo ECVA
+            logo_x = margin_left + 145
+            c.rect(logo_x, y_pos - 50, 150, 50)
+            try:
+                logo_path = 'static/images/logo-ECVA.png'
+                logo = ImageReader(logo_path)
+                c.drawImage(logo, logo_x + 30, y_pos - 45, 
+                          width=90, height=40, 
+                          preserveAspectRatio=True, mask='auto')
+            except:
+                c.setFont("Helvetica-Bold", 16)
+                c.drawCentredString(logo_x + 75, y_pos - 25, "ECVA")
+            
+            # Rectángulo derecho - Tipo de documento
+            doc_x = logo_x + 150
+            c.rect(doc_x, y_pos - 50, margin_right - doc_x, 50)
+            c.setFont("Helvetica-Bold", 8)
+            c.drawCentredString((doc_x + margin_right) / 2, y_pos - 25, "Tipo documento:")
+            c.setFont("Helvetica-Bold", 10)
+            c.drawCentredString((doc_x + margin_right) / 2, y_pos - 40, "DOCUMENTO OPERATIVO")
+            
+            # Segunda fila del header - Título del documento
+            c.setFillColor(colors.HexColor('#f0f0f0'))
+            c.rect(margin_left, y_pos - 80, margin_right - margin_left, 30, fill=1, stroke=1)
+            c.setFillColor(colors.black)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawCentredString(width / 2, y_pos - 65, "RECHAZO DE MATERIALES")
+            
+            return y_pos - 100
         
-        # Rectángulo central - Logo ECVA
-        c.rect(200, height - 100, 150, 50)
-        try:
-            # Ajusta la ruta según donde tengas tu logo
-            logo_path = 'static/images/logo-ECVA.png'  # o tu ruta
-            logo = ImageReader(logo_path)
-            c.drawImage(logo, 230, height - 95, width=90, height=40, preserveAspectRatio=True, mask='auto')
-        except:
-            c.setFont("Helvetica-Bold", 16)
-            c.drawCentredString(275, height - 75, "ECVA")
-        
-        # Rectángulo derecho - Tipo de documento
-        c.rect(350, height - 100, 195, 50)
-        c.setFont("Helvetica-Bold", 8)
-        c.drawCentredString(447.5, height - 65, "Tipo documento:")
-        c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(447.5, height - 80, "DOCUMENTO OPERATIVO")
-        
-        # Segunda fila del header
-        c.rect(50, height - 130, 495, 30)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(60, height - 120, "Rechazo de materiales")
-        
+        # ========== PRIMERA PÁGINA - ENCABEZADO ==========
+        y = crear_encabezado(c, margin_top)
         
         # ========== DATOS DEL REPORTE ==========
-        y = height - 160
-        
-        # Primera columna de datos
-        data_fields = [
-            ("OBRA", reporte.idObra.nombreObra),
-            ("REMITO DE RECEPCION", reporte.remitoRecepcion),
-            ("FECHA", reporte.fecha.strftime('%d/%m/%Y')),
-            ("CLIENTE", reporte.idCliente.nombre),
-            ("EMPLEADO", f"{reporte.idEmpleado.nombre} {reporte.idEmpleado.apellido}"),
-        ]
-        
-        for label, value in data_fields:
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(60, y, label)
-            
-            c.setStrokeColor(colors.black)
-            c.setLineWidth(0.5)
-            c.rect(180, y - 5, 150, 18)
-            
-            c.setFont("Helvetica", 9)
-            c.drawString(185, y, str(value) if value else "")
-            
-            y -= 25
-        
-        # INFORME No. (en la esquina superior derecha de esta sección)
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(400, height - 160, "INFORME No.")
-        c.rect(480, height - 165, 60, 18)
-        c.setFont("Helvetica", 10)
-        c.drawCentredString(510, height - 160, str(reporte.idReporte))
-        
         y -= 20
         
-        # ========== SECCIONES DE PIEZAS RECHAZADAS ==========
+        # Contenedor principal de información
+        c.setStrokeColor(colors.HexColor('#cccccc'))
+        c.setLineWidth(0.5)
+        
+        # INFORME No. (destacado en la esquina superior derecha)
+        info_box_x = margin_right - 140
+        c.setFillColor(colors.HexColor('#fe2020'))
+        c.rect(info_box_x, y - 5, 140, 30, fill=1, stroke=0)
+        c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 10)
+        c.drawString(info_box_x + 10, y + 12, "INFORME No.")
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(info_box_x + 10, y - 2, str(reporte.idReporte))
+        c.setFillColor(colors.black)
+        
+        # Grid de información del reporte
+        y -= 15
+        data_fields = [
+            ("OBRA:", reporte.idObra.nombreObra if reporte.idObra else "N/A"),
+            ("CLIENTE:", reporte.idCliente.nombre if reporte.idCliente else "N/A"),
+            ("FECHA:", reporte.fecha.strftime('%d/%m/%Y')),
+            ("REMITO RECEPCIÓN:", reporte.remitoRecepcion or "N/A"),
+            ("EMPLEADO:", f"{reporte.idEmpleado.nombre} {reporte.idEmpleado.apellido}" if reporte.idEmpleado else "N/A"),
+        ]
+        
+        box_height = 22
+        label_width = 140
+        value_width = 300
+        
+        for label, value in data_fields:
+            # Borde del campo
+            c.setStrokeColor(colors.HexColor('#e0e0e0'))
+            c.setLineWidth(0.5)
+            c.rect(margin_left, y - box_height, label_width + value_width, box_height)
+            
+            # Área del label (con fondo gris claro)
+            c.setFillColor(colors.HexColor('#f5f5f5'))
+            c.rect(margin_left, y - box_height, label_width, box_height, fill=1, stroke=0)
+            
+            # Texto del label
+            c.setFillColor(colors.HexColor('#333333'))
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(margin_left + 8, y - 14, label)
+            
+            # Texto del valor
+            c.setFillColor(colors.black)
+            c.setFont("Helvetica", 9)
+            # Truncar texto si es muy largo
+            max_chars = 50
+            display_value = str(value)[:max_chars] + "..." if len(str(value)) > max_chars else str(value)
+            c.drawString(margin_left + label_width + 8, y - 14, display_value)
+            
+            y -= box_height
+        
+        y -= 30
+        
+        # ========== SECCIÓN DE PIEZAS RECHAZADAS ==========
+        c.setFont("Helvetica-Bold", 11)
+        c.setFillColor(colors.HexColor('#333333'))
+        c.drawString(margin_left, y, "DETALLE DE PIEZAS RECHAZADAS")
+        y -= 5
+        c.setStrokeColor(colors.HexColor('#fe2020'))
+        c.setLineWidth(2)
+        c.line(margin_left, y, margin_left + 200, y)
+        y -= 25
         
         for idx, pieza in enumerate(piezasRechazadas, 1):
-            # Verificar si necesitamos nueva página
+            # Verificar espacio disponible (necesitamos ~200 puntos)
             if y < 250:
                 c.showPage()
-                y = height - 80
+                y = crear_encabezado(c, margin_top)
+                y -= 20
             
-            # Header de sección: SOPORTE | MOTIVO
-            c.setStrokeColor(colors.black)
+            # Contenedor de la pieza rechazada
+            pieza_height = 180
+            c.setStrokeColor(colors.HexColor('#cccccc'))
             c.setLineWidth(1)
+            c.rect(margin_left, y - pieza_height, margin_right - margin_left, pieza_height)
             
-            # SOPORTE
-            c.rect(50, y - 5, 230, 20, fill=1, stroke=1)
-            c.setFillColor(colors.lightgrey)
-            c.rect(50, y - 5, 230, 20, fill=1, stroke=1)
-            c.setFillColor(colors.black)
+            # Header de la sección de pieza
+            c.setFillColor(colors.HexColor('#f0f0f0'))
+            c.rect(margin_left, y - 25, margin_right - margin_left, 25, fill=1, stroke=0)
+            c.setFillColor(colors.HexColor('#333333'))
             c.setFont("Helvetica-Bold", 10)
-            c.drawCentredString(165, y, "SOPORTE")
+            c.drawString(margin_left + 10, y - 16, f"PIEZA #{idx}")
             
-            # MOTIVO
-            c.setFillColor(colors.lightgrey)
-            c.rect(280, y - 5, 265, 20, fill=1, stroke=1)
-            c.setFillColor(colors.black)
-            c.drawCentredString(412.5, y, "MOTIVO")
+            # Divisor vertical para imagen y datos
+            image_width = 240
+            divider_x = margin_left + image_width
+            c.setStrokeColor(colors.HexColor('#e0e0e0'))
+            c.line(divider_x, y - 25, divider_x, y - pieza_height)
             
-            y -= 25
-            
-            # Área de imagen (SOPORTE)
-            c.setStrokeColor(colors.black)
-            c.rect(50, y - 150, 230, 150)
+            # ===== ÁREA DE IMAGEN (IZQUIERDA) =====
+            image_box_y = y - 35
+            image_box_height = pieza_height - 35
             
             if pieza.imagen:
                 try:
-                    sas_url = generar_url_sas(pieza.imagen.name, expira_en_min=3)
-                    resp = requests.get(sas_url)
-                    resp.raise_for_status()
-                    
-                    img_data = BytesIO(resp.content)
-                    img = ImageReader(img_data)
-                    
-                    # Dibujar imagen centrada en el cuadro
-                    c.drawImage(img, 60, y - 145, width=210, height=140, 
-                              preserveAspectRatio=True)
+                    # Intentar cargar la imagen desde Azure o ruta local
+                    if hasattr(pieza.imagen, 'url'):
+                        # Si está en Azure Storage
+                        try:
+                            sas_url = generar_url_sas(pieza.imagen.name, expira_en_min=3)
+                            resp = requests.get(sas_url, timeout=5)
+                            resp.raise_for_status()
+                            img_data = BytesIO(resp.content)
+                        except:
+                            # Fallback a URL directa
+                            resp = requests.get(pieza.imagen.url, timeout=5)
+                            resp.raise_for_status()
+                            img_data = BytesIO(resp.content)
+                        
+                        img = ImageReader(img_data)
+                        
+                        # Calcular dimensiones manteniendo aspecto
+                        img_draw_width = image_width - 20
+                        img_draw_height = image_box_height - 10
+                        
+                        c.drawImage(img, 
+                                  margin_left + 10, 
+                                  y - pieza_height + 10,
+                                  width=img_draw_width, 
+                                  height=img_draw_height,
+                                  preserveAspectRatio=True,
+                                  anchor='c')
                 except Exception as e:
                     c.setFont("Helvetica-Oblique", 9)
-                    c.drawString(70, y - 75, f"Error al cargar imagen")
+                    c.setFillColor(colors.HexColor('#999999'))
+                    c.drawCentredString(margin_left + image_width / 2, 
+                                       y - pieza_height / 2, 
+                                       "Error al cargar imagen")
+                    c.setFillColor(colors.black)
             else:
                 c.setFont("Helvetica-Oblique", 9)
-                c.drawString(120, y - 75, "(Sin imagen)")
+                c.setFillColor(colors.HexColor('#999999'))
+                c.drawCentredString(margin_left + image_width / 2, 
+                                   y - pieza_height / 2, 
+                                   "Sin imagen disponible")
+                c.setFillColor(colors.black)
             
-            # Área de MOTIVO (checkboxes y datos)
-            motivo_y = y
+            # ===== ÁREA DE DATOS (DERECHA) =====
+            data_x = divider_x + 10
+            data_y = y - 40
+            field_spacing = 28
             
-            # MATERIAL
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(290, motivo_y, "MATERIAL")
-            c.rect(360, motivo_y - 5, 180, 18)
-            c.setFont("Helvetica", 8)
-            pieza_info = f"{pieza.idPieza.idCategoria.descripcion} - {pieza.idPieza.medidas}"
-            c.drawString(365, motivo_y, pieza_info)
-            
-            motivo_y -= 25
-            
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(290, motivo_y, "CANT")
-            c.rect(360, motivo_y - 5, 180, 18)
-            c.setFont("Helvetica", 8)
-            pieza_info = f"{pieza.cantidad} Unidades"
-            c.drawString(365, motivo_y, pieza_info)
-            
-            motivo_y -= 25
-            
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(290, motivo_y, "CAT. DAÑO")
-            c.rect(360, motivo_y - 5, 180, 18)
-            c.setFont("Helvetica", 8)
-            pieza_info = f"{pieza.idCategoriaDano}"
-            c.drawString(365, motivo_y, pieza_info)
-             
-            # Cantidad y observaciones
-            motivo_y -= 25
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(290, motivo_y, "OBSERVACIONES")
-            c.rect(300, motivo_y - 40, 240, 40)
-            
-            c.setFont("Helvetica", 8)
-            obs_text = f"{pieza.observaciones or 'Sin observaciones'}"
-            # Dividir texto si es muy largo
-            if len(obs_text) > 60:
-                c.drawString(310, motivo_y - 15, obs_text[:60])
-                c.drawString(310, motivo_y - 25, obs_text[60:120])
+            # Campo: MATERIAL
+            c.setFont("Helvetica-Bold", 8)
+            c.setFillColor(colors.HexColor('#666666'))
+            c.drawString(data_x, data_y, "MATERIAL")
+            c.setFont("Helvetica", 9)
+            c.setFillColor(colors.black)
+            material_text = f"{pieza.idPieza.idCategoria.descripcion} - {pieza.idPieza.medidas}" if pieza.idPieza else "N/A"
+            # Dividir en dos líneas si es muy largo
+            if len(material_text) > 35:
+                c.drawString(data_x, data_y - 12, material_text[:35])
+                c.drawString(data_x, data_y - 22, material_text[35:70])
+                data_y -= field_spacing + 10
             else:
-                c.drawString(310, motivo_y - 15, obs_text)
+                c.drawString(data_x, data_y - 12, material_text)
+                data_y -= field_spacing
             
-            y = motivo_y - 60
+            # Campo: CANTIDAD
+            c.setFont("Helvetica-Bold", 8)
+            c.setFillColor(colors.HexColor('#666666'))
+            c.drawString(data_x, data_y, "CANTIDAD")
+            c.setFont("Helvetica", 9)
+            c.setFillColor(colors.black)
+            c.drawString(data_x, data_y - 12, f"{pieza.cantidad} Unidades")
+            data_y -= field_spacing
             
-            # Línea separadora entre piezas
-            if idx < len(piezasRechazadas):
-                c.setStrokeColor(colors.grey)
-                c.setLineWidth(0.5)
-                c.line(50, y, width - 50, y)
-                y -= 25
+            # Campo: CATEGORÍA DE DAÑO
+            c.setFont("Helvetica-Bold", 8)
+            c.setFillColor(colors.HexColor('#666666'))
+            c.drawString(data_x, data_y, "CATEGORÍA DE DAÑO")
+            c.setFont("Helvetica", 9)
+            c.setFillColor(colors.HexColor('#fe2020'))
+            c.drawString(data_x, data_y - 12, str(pieza.idCategoriaDano) if pieza.idCategoriaDano else "N/A")
+            c.setFillColor(colors.black)
+            data_y -= field_spacing
+            
+            # Campo: OBSERVACIONES (con borde)
+            c.setFont("Helvetica-Bold", 8)
+            c.setFillColor(colors.HexColor('#666666'))
+            c.drawString(data_x, data_y, "OBSERVACIONES")
+            
+            obs_box_height = 50
+            c.setStrokeColor(colors.HexColor('#e0e0e0'))
+            c.setLineWidth(0.5)
+            c.rect(data_x, data_y - obs_box_height - 5, 
+                   margin_right - data_x - 10, obs_box_height)
+            
+            c.setFont("Helvetica", 8)
+            c.setFillColor(colors.black)
+            obs_text = pieza.observaciones or "Sin observaciones"
+            
+            # Dividir observaciones en líneas
+            max_width = 45
+            words = obs_text.split()
+            lines = []
+            current_line = ""
+            
+            for word in words:
+                if len(current_line + word) < max_width:
+                    current_line += word + " "
+                else:
+                    lines.append(current_line.strip())
+                    current_line = word + " "
+            if current_line:
+                lines.append(current_line.strip())
+            
+            obs_y = data_y - 15
+            for line in lines[:3]:  # Máximo 3 líneas
+                c.drawString(data_x + 5, obs_y, line)
+                obs_y -= 12
+            
+            y -= pieza_height + 15
         
         # ========== DATOS DEL TRANSPORTE ==========
-        if y < 150:
+        if y < 180:
             c.showPage()
-            y = height - 80
+            y = margin_top - 50
         
-        y -= 30
-        c.setStrokeColor(colors.black)
-        c.setLineWidth(1.5)
-        c.line(50, y, width - 50, y)
-        y -= 30
+        y -= 20
         
-        transport_fields = [
-            ("TRANSPORTE", reporte.idConductor.transporte.title()),
-            ("PATENTE", reporte.idConductor.patente.upper()),
-            ("NOMBRE Y APELLIDO", f"{reporte.idConductor.nombre.title()} {reporte.idConductor.apellido.title()}"),
-        ]
+        # Título de sección
+        c.setFont("Helvetica-Bold", 11)
+        c.setFillColor(colors.HexColor('#333333'))
+        c.drawString(margin_left, y, "INFORMACIÓN DEL TRANSPORTE")
+        y -= 5
+        c.setStrokeColor(colors.HexColor('#fe2020'))
+        c.setLineWidth(2)
+        c.line(margin_left, y, margin_left + 220, y)
+        y -= 25
         
-        for label, value in transport_fields:
-            c.setFont("Helvetica-Bold", 9)
-            c.drawString(60, y, label)
-            c.setLineWidth(0.5)
-            c.line(180, y - 3, 400, y - 3)
-            c.setFont("Helvetica", 9)
-            c.drawString(185, y, value)
-            y -= 25
+        # Contenedor de transporte
+        transport_height = 100
+        c.setStrokeColor(colors.HexColor('#cccccc'))
+        c.setLineWidth(1)
+        c.rect(margin_left, y - transport_height, margin_right - margin_left, transport_height)
         
+        y -= 20
         
-        # Área de firma
-        y -= 10
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(60, y, "FIRMA")
-        c.line(60, y - 3, 200, y - 3)
+        if reporte.idConductor:
+            transport_fields = [
+                ("TRANSPORTE:", reporte.idConductor.transporte.title() if reporte.idConductor.transporte else "N/A"),
+                ("PATENTE:", reporte.idConductor.patente.upper() if reporte.idConductor.patente else "N/A"),
+                ("CONDUCTOR:", f"{reporte.idConductor.nombre.title()} {reporte.idConductor.apellido.title()}" if reporte.idConductor.nombre else "N/A"),
+            ]
+            
+            for label, value in transport_fields:
+                c.setFont("Helvetica-Bold", 9)
+                c.setFillColor(colors.HexColor('#666666'))
+                c.drawString(margin_left + 15, y, label)
+                c.setFont("Helvetica", 9)
+                c.setFillColor(colors.black)
+                c.drawString(margin_left + 120, y, value)
+                y -= 22
+        else:
+            c.setFont("Helvetica-Oblique", 9)
+            c.setFillColor(colors.HexColor('#999999'))
+            c.drawString(margin_left + 15, y - 30, "Información de transporte no disponible")
+            c.setFillColor(colors.black)
         
+        # ========== ÁREA DE FIRMAS ==========
+        y -= 50
+        
+        if y < 120:
+            c.showPage()
+            y = margin_top - 50
+        
+        # Título
+        c.setFont("Helvetica-Bold", 10)
+        c.setFillColor(colors.HexColor('#333333'))
+        c.drawString(margin_left, y, "FIRMAS Y AUTORIZACIONES")
+        y -= 50
+        
+        # Dos columnas de firma
+        firma_width = (margin_right - margin_left - 20) / 2
+        
+        # Firma 1 - Conductor
+        c.setStrokeColor(colors.HexColor('#cccccc'))
+        c.setLineWidth(0.5)
+        c.line(margin_left, y, margin_left + firma_width, y)
         c.setFont("Helvetica", 8)
-        c.drawString(280, y + 4 , "FIRMA Y ACLARACIÓN")
-        c.drawString(280, y - 3, "CONTROL - RECHAZO")
-        c.line(280, y - 5, width - 60, y - 5 )
+        c.setFillColor(colors.HexColor('#666666'))
+        c.drawString(margin_left, y - 12, "Firma del Conductor")
         
-        # Pie de página
-        c.setFont("Helvetica-Oblique", 8)
-        c.setFillColor(colors.grey)
-        c.drawCentredString(width / 2, 5, 
-                           "Sistema de Reportes de Daños © 2025 - Uso Interno")
+        # Firma 2 - Control
+        firma2_x = margin_left + firma_width + 20
+        c.line(firma2_x, y, firma2_x + firma_width, y)
+        c.drawString(firma2_x, y - 12, "Firma y Aclaración - Control de Rechazo")
+        
+        # ========== PIE DE PÁGINA ==========
+        c.setFont("Helvetica-Oblique", 7)
+        c.setFillColor(colors.HexColor('#999999'))
+        c.drawCentredString(width / 2, 25, 
+                           f"Sistema de Reportes de Daños ECVA © 2025 - Documento generado el {reporte.fecha.strftime('%d/%m/%Y')}")
+        c.drawCentredString(width / 2, 15, "Para uso interno exclusivo")
         
         # Guardar PDF
         c.showPage()
@@ -501,5 +660,5 @@ def generar_reporte_pdf(request, reporte_id):
         return response
     
     except Exception as e:
-        messages.error(request, f'Error al generar PDF: {e}')
+        messages.error(request, f'Error al generar PDF: {str(e)}')
         return redirect('detalle_reporte', reporte_id=reporte_id)

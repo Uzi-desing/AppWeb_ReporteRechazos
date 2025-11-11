@@ -39,6 +39,9 @@ if not DEBUG and '.onrender.com' not in ALLOWED_HOSTS:
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
+    "unfold.contrib.filters", 
+    "unfold.contrib.forms",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -129,19 +132,19 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
 
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
@@ -175,4 +178,196 @@ SESSION_COOKIE_AGE = 3600  # Sesión expira en 1 hora (3600 segundos)
 SESSION_SAVE_EVERY_REQUEST = True  # Renueva el tiempo de sesión en cada request
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Sesión expira al cerrar navegador
 
+from pathlib import Path
+from django.templatetags.static import static
+from django.utils.translation import gettext_lazy as _
 
+# Configuración de Unfold
+UNFOLD = {
+    # Información general del sitio
+    "SITE_TITLE": "Sistema de Reportes ECVA",
+    "SITE_HEADER": "Panel de Administración de Reportes",
+    "SITE_URL": "/",
+    
+    # Logos e íconos
+    "SITE_LOGO": {
+        "light": lambda request: static("images/logo-ECVA.png"),
+        "dark": lambda request: static("images/logo-ECVA.png"),
+    },
+    "SITE_ICON": {
+        "light": lambda request: static("images/logo-ECVA.png"),
+        "dark": lambda request: static("images/logo-ECVA.png"),
+    },
+    "SITE_FAVICON": lambda request: static("images/logo-ECVA.png"),
+    
+    "SITE_SYMBOL": "speed",  
+    
+    # Estilos personalizados
+    "STYLES": [
+        lambda request: static("css/custom_styles.css"),
+    ],
+    
+    # Esquema de colores
+    "COLORS": {
+        "primary": {
+            "50": "#ffeaea",
+            "100": "#ffc7c7",
+            "200": "#ff9e9e",
+            "300": "#ff7676",
+            "400": "#ff4d4d",
+            "500": "#fe2020",
+            "600": "#e61c1c",
+            "700": "#cc1818",
+            "800": "#b31414",
+            "900": "#991010"
+        },
+    },
+    
+    
+    "THEME": "light", 
+    
+    # Sidebar (barra lateral)
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": _("Navegación"),
+                "separator": True,
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",
+                        "link": lambda request: "/admin/",
+                    },
+                ],
+            },
+            {
+                "title": _("Catálogos"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Categorías"),
+                        "icon": "category",
+                        "link": lambda request: "/admin/reportes/categoria/",
+                    },
+                    {
+                        "title": _("Disponibilidad"),
+                        "icon": "check_circle",
+                        "link": lambda request: "/admin/reportes/disponibilidad/",
+                    },
+                    {
+                        "title": _("Categoría Daño"),
+                        "icon": "warning",
+                        "link": lambda request: "/admin/reportes/categoriadano/",
+                    },
+                    {
+                        "title": _("Roles"),
+                        "icon": "badge",
+                        "link": lambda request: "/admin/reportes/rol/",
+                    },
+                ],
+            },
+            {
+                "title": _("Gestión de Personal"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Empleados"),
+                        "icon": "person",
+                        "link": lambda request: "/admin/reportes/empleado/",
+                    },
+                    {
+                        "title": _("Transportistas"),
+                        "icon": "local_shipping",
+                        "link": lambda request: "/admin/reportes/usuariotransportista/",
+                    },
+                ],
+            },
+            {
+                "title": _("Proyectos"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Clientes"),
+                        "icon": "people",
+                        "link": lambda request: "/admin/reportes/cliente/",
+                    },
+                    {
+                        "title": _("Obras"),
+                        "icon": "construction",
+                        "link": lambda request: "/admin/reportes/obras/",
+                    },
+                    {
+                        "title": _("Piezas"),
+                        "icon": "inventory_2",
+                        "link": lambda request: "/admin/reportes/piezas/",
+                    },
+                ],
+            },
+            {
+                "title": _("Reportes"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Reporte de Daño"),
+                        "icon": "report_problem",
+                        "link": lambda request: "/admin/reportes/reportedano/",
+                    },
+                    {
+                        "title": _("Piezas Rechazadas"),
+                        "icon": "block",
+                        "link": lambda request: "/admin/reportes/piezarechazada/",
+                    },
+                ],
+            },
+            {
+                "title": _("Administración"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Usuarios"),
+                        "icon": "people",
+                        "link": lambda request: "/admin/auth/user/",
+                    },
+                    {
+                        "title": _("Grupos"),
+                        "icon": "groups",
+                        "link": lambda request: "/admin/auth/group/",
+                    },
+                ],
+            },
+        ],
+    },
+    
+    # Configuración de tabs
+    "TABS": [
+        {
+            "models": [
+                "reportes.reportedano",
+                "reportes.piezarechazada",
+            ],
+            "items": [
+                {
+                    "title": _("Reportes de Daño"),
+                    "link": lambda request: "/admin/reportes/reportedano/",
+                },
+                {
+                    "title": _("Piezas Rechazadas"),
+                    "link": lambda request: "/admin/reportes/piezarechazada/",
+                },
+            ],
+        },
+    ],
+}
+
+
+
+            
+            
+        

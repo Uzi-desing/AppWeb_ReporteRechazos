@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Reporte de Rechazos{% endblock %}</title>
-    <link rel="shortcut icon" href="/static/images/logo-ECVA.png" type="image/x-icon">
+    <link rel="shortcut icon" href="{% static 'images/logo-ECVA.png' %}" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -22,12 +22,12 @@
 <body class="bg-gray-50 text-black min-h-screen">
     <nav class="bg-white border-b border-black/10 sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="h-14 flex items-center justify-between">
+            <div class="h-16 flex items-center justify-between">
                 <!-- Logo y título -->
                 <div class="flex items-center gap-4">
                     <img src="{% static 'images/logo-ECVA.png' %}" alt="Logo" class="h-8 w-auto">
                     <a href="{% url 'home' %}" class="font-semibold tracking-tight text-black hover:text-brand transition-colors">
-                        Sistema de Reporte de Rechazo de Andamios Multidireccionales
+                        Sistema de Reporte de Rechazo de Andamios
                     </a>
                 </div>
 
