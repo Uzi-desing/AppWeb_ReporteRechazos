@@ -121,7 +121,6 @@ def crear_entrega(request):
             
             reporte = form.save(commit=False)
             reporte.idConductor = conductor
-            reporte.idEmpleado = Empleado.objects.get(idEmpleado=1)
             reporte.remitoRecepcion = form.cleaned_data['remitoRecepcion']
             reporte.save()
             
