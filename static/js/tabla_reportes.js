@@ -53,13 +53,20 @@ document.addEventListener("DOMContentLoaded", function () {
         mostrarPagina(1);
     }
 
-    // ======== PAGINACIÓN ========
+    // ======== PAGINACIÓN (CORREGIDA) ========
     function mostrarPagina(pagina) {
         const inicio = (pagina - 1) * porPagina;
         const fin = inicio + porPagina;
 
-        filas.forEach(f => f.style.display = "none");
-        filasVisibles.slice(inicio, fin).forEach(f => f.style.display = "");
+        // CORRECCIÓN CLAVE: Reordenar el DOM según el array filasVisibles
+        tablaBody.innerHTML = ''; // Limpiar el tbody
+        
+        // Agregar TODAS las filas en el orden correcto (ocultas o visibles)
+        filasVisibles.forEach((fila, index) => {
+            tablaBody.appendChild(fila);
+            // Mostrar solo las filas de la página actual
+            fila.style.display = (index >= inicio && index < fin) ? "" : "none";
+        });
 
         paginaActual = pagina;
         renderizarControles();
@@ -133,6 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
         th.addEventListener("click", () => {
             const asc = estadoOrden[colIndex];
             
+            // Ordenar el array filasVisibles
             filasVisibles.sort((a, b) => {
                 const textoA = a.querySelectorAll("td")[colIndex].textContent.trim().toLowerCase();
                 const textoB = b.querySelectorAll("td")[colIndex].textContent.trim().toLowerCase();
@@ -149,6 +157,8 @@ document.addEventListener("DOMContentLoaded", function () {
             
             estadoOrden[colIndex] = !asc;
             actualizarIndicadores(th, asc);
+            
+            // CORRECCIÓN: Llamar a mostrarPagina para reorganizar el DOM
             mostrarPagina(1);
         });
     });
