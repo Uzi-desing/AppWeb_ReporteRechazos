@@ -315,31 +315,24 @@ def generar_reporte_pdf(request, reporte_id):
         
         # ========== FUNCIÓN AUXILIAR PARA NUEVA PÁGINA ==========
         def crear_encabezado(canvas_obj, y_pos):
-            """Crea el encabezado en cada página"""
             c.setStrokeColor(colors.HexColor('#000000'))
             c.setLineWidth(1.5)
-            
-            # Rectángulo izquierdo - "DOCUMENTOS DEL SIG"
             c.rect(margin_left, y_pos - 50, 145, 50)
             c.setFont("Helvetica-Bold", 9)
             c.drawCentredString(margin_left + 72.5, y_pos - 30, "DOCUMENTOS DEL SIG")
             
-            # Rectángulo central - Logo ECVA
             logo_x = margin_left + 145
             c.rect(logo_x, y_pos - 50, 150, 50)
             try:
                 logo_path = os.path.join(settings.STATIC_ROOT, 'images/logo-ECVA.png')
-                if not os.path.exists(logo_path): # Fallback si static_root no está listo
+                if not os.path.exists(logo_path):
                     logo_path = 'static/images/logo-ECVA.png'
                 logo = ImageReader(logo_path)
-                c.drawImage(logo, logo_x + 30, y_pos - 45, 
-                          width=90, height=40, 
-                          preserveAspectRatio=True, mask='auto')
+                c.drawImage(logo, logo_x + 30, y_pos - 45, width=90, height=40, preserveAspectRatio=True, mask='auto')
             except:
                 c.setFont("Helvetica-Bold", 16)
                 c.drawCentredString(logo_x + 75, y_pos - 25, "ECVA")
             
-            # Rectángulo derecho - Tipo de documento
             doc_x = logo_x + 150
             c.rect(doc_x, y_pos - 50, margin_right - doc_x, 50)
             c.setFont("Helvetica-Bold", 8)
@@ -347,16 +340,13 @@ def generar_reporte_pdf(request, reporte_id):
             c.setFont("Helvetica-Bold", 10)
             c.drawCentredString((doc_x + margin_right) / 2, y_pos - 40, "DOCUMENTO OPERATIVO")
             
-            # Segunda fila del header - Título del documento
             c.setFillColor(colors.HexColor('#f0f0f0'))
             c.rect(margin_left, y_pos - 80, margin_right - margin_left, 30, fill=1, stroke=1)
             c.setFillColor(colors.black)
             c.setFont("Helvetica-Bold", 12)
             c.drawCentredString(width / 2, y_pos - 65, "RECHAZO DE MATERIALES")
-            
             return y_pos - 100
         
-        # ========== PRIMERA PÁGINA - ENCABEZADO ==========
         y = crear_encabezado(c, margin_top)
         
         # ========== DATOS DEL REPORTE ==========
@@ -372,8 +362,8 @@ def generar_reporte_pdf(request, reporte_id):
         c.drawString(info_box_x + 10, y + 12, "INFORME No.")
         c.setFont("Helvetica-Bold", 16)
         c.drawString(info_box_x + 10, y - 2, str(reporte.idReporte))
-        c.setFillColor(colors.black)
         
+        c.setFillColor(colors.black)
         y -= 15
         data_fields = [
             ("OBRA:", reporte.idObra.nombreObra if reporte.idObra else "N/A"),
@@ -385,11 +375,9 @@ def generar_reporte_pdf(request, reporte_id):
         
         box_height = 22
         label_width = 140
-        value_width = 300
-        
         for label, value in data_fields:
             c.setStrokeColor(colors.HexColor('#e0e0e0'))
-            c.rect(margin_left, y - box_height, label_width + value_width, box_height)
+            c.rect(margin_left, y - box_height, 440, box_height)
             c.setFillColor(colors.HexColor('#f5f5f5'))
             c.rect(margin_left, y - box_height, label_width, box_height, fill=1, stroke=0)
             c.setFillColor(colors.HexColor('#333333'))
@@ -397,9 +385,7 @@ def generar_reporte_pdf(request, reporte_id):
             c.drawString(margin_left + 8, y - 14, label)
             c.setFillColor(colors.black)
             c.setFont("Helvetica", 9)
-            max_chars = 50
-            display_value = str(value)[:max_chars] + "..." if len(str(value)) > max_chars else str(value)
-            c.drawString(margin_left + label_width + 8, y - 14, display_value)
+            c.drawString(margin_left + label_width + 8, y - 14, str(value)[:55])
             y -= box_height
         
         y -= 30
@@ -429,46 +415,41 @@ def generar_reporte_pdf(request, reporte_id):
             c.setFont("Helvetica-Bold", 10)
             c.drawString(margin_left + 10, y - 16, f"PIEZA #{idx}")
             
-            image_width = 240
-            divider_x = margin_left + image_width
+            divider_x = margin_left + 240
             c.setStrokeColor(colors.HexColor('#e0e0e0'))
             c.line(divider_x, y - 25, divider_x, y - pieza_height)
             
             # --- PROCESAMIENTO DE IMAGEN ---
-            image_box_height = pieza_height - 35
             if pieza.imagen:
                 try:
-                    with default_storage.open(pieza.imagen.name, 'rb') as img_file:
-                        img_content = img_file.read()
-                        img_data = BytesIO(img_content)
+                    # USAMOS LA URL SAS PARA DESCARGAR LA IMAGEN EN MEMORIA
+                    url_sas = generar_url_sas(pieza.imagen.name, expira_en_min=5)
+                    img_response = requests.get(url_sas)
+                    if img_response.status_code == 200:
+                        img_data = BytesIO(img_response.content)
                         img = ImageReader(img_data)
-                        
-                        img_draw_width = image_width - 20
-                        img_draw_height = image_box_height - 10
-                        
-                        c.drawImage(img, margin_left + 10, y - pieza_height + 10, 
-                                    width=img_draw_width, height=img_draw_height,
-                                    preserveAspectRatio=True, anchor='c')
+                        c.drawImage(img, margin_left + 10, y - pieza_height + 10, width=220, height=135, preserveAspectRatio=True, anchor='c')
+                    else:
+                        raise Exception("No se pudo obtener la imagen de Azure")
                 except Exception as e:
                     c.setFont("Helvetica-Oblique", 7)
                     c.setFillColor(colors.red)
-                    c.drawString(margin_left + 10, y - (pieza_height/2), f"Error de lectura: {pieza.imagen.name}")
+                    c.drawString(margin_left + 10, y - 100, f"Error de acceso: {pieza.imagen.name}")
                     c.setFillColor(colors.black)
             else:
                 c.setFont("Helvetica-Oblique", 9)
                 c.setFillColor(colors.HexColor('#999999'))
-                c.drawCentredString(margin_left + image_width / 2, y - pieza_height / 2, "Sin imagen")
+                c.drawCentredString(margin_left + 120, y - 100, "Sin imagen")
             
             # --- DATOS DERECHA ---
             c.setFillColor(colors.black)
             data_x = divider_x + 10
             data_y = y - 40
-            
             c.setFont("Helvetica-Bold", 8)
             c.drawString(data_x, data_y, "MATERIAL")
             c.setFont("Helvetica", 9)
-            material_text = f"{pieza.idPieza.idCategoria.descripcion} - {pieza.idPieza.medidas}" if pieza.idPieza else "N/A"
-            c.drawString(data_x, data_y - 12, material_text[:40])
+            mat = f"{pieza.idPieza.idCategoria.descripcion} - {pieza.idPieza.medidas}" if pieza.idPieza else "N/A"
+            c.drawString(data_x, data_y - 12, mat[:35])
             
             data_y -= 35
             c.setFont("Helvetica-Bold", 8)
@@ -481,12 +462,8 @@ def generar_reporte_pdf(request, reporte_id):
             c.drawString(data_x, data_y, "OBSERVACIONES")
             c.setFont("Helvetica", 8)
             obs = pieza.observaciones or "Sin observaciones"
-            # Un wrap simple para observaciones
-            if len(obs) > 40:
-                c.drawString(data_x, data_y - 12, obs[:40])
-                c.drawString(data_x, data_y - 22, obs[40:80])
-            else:
-                c.drawString(data_x, data_y - 12, obs)
+            c.drawString(data_x, data_y - 12, obs[:45])
+            if len(obs) > 45: c.drawString(data_x, data_y - 22, obs[45:90])
 
             y -= pieza_height + 15
 
@@ -498,8 +475,7 @@ def generar_reporte_pdf(request, reporte_id):
         y -= 20
         c.setFont("Helvetica-Bold", 11)
         c.drawString(margin_left, y, "INFORMACIÓN DEL TRANSPORTE")
-        y -= 25
-        
+        y -= 30
         if reporte.idConductor:
             c.setFont("Helvetica", 9)
             c.drawString(margin_left + 10, y, f"Transporte: {reporte.idConductor.transporte.upper()}")
@@ -509,7 +485,6 @@ def generar_reporte_pdf(request, reporte_id):
         y -= 80
         c.line(margin_left, y, margin_left + 150, y)
         c.drawString(margin_left, y - 12, "Firma Conductor")
-        
         c.line(margin_right - 150, y, margin_right, y)
         c.drawString(margin_right - 150, y - 12, "Firma Control ECVA")
 
