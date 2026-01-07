@@ -13,6 +13,7 @@ from django.http import JsonResponse
 import uuid, os
 from io import BytesIO
 from django.db.models import Count, Sum
+from PIL import Image
 
 
 #Librerias para ReporLab y Azure
@@ -422,24 +423,35 @@ def generar_reporte_pdf(request, reporte_id):
             # --- PROCESAMIENTO DE IMAGEN ---
             if pieza.imagen:
                 try:
-                    # USAMOS LA URL SAS PARA DESCARGAR LA IMAGEN EN MEMORIA
                     url_sas = generar_url_sas(pieza.imagen.name, expira_en_min=5)
-                    img_response = requests.get(url_sas)
+                    img_response = requests.get(url_sas, timeout=10)
+                    
                     if img_response.status_code == 200:
-                        img_data = BytesIO(img_response.content)
-                        img = ImageReader(img_data)
-                        c.drawImage(img, margin_left + 10, y - pieza_height + 10, width=220, height=135, preserveAspectRatio=True, anchor='c')
+                        # 1. Cargamos la imagen original en Pillow
+                        img_temp = Image.open(BytesIO(img_response.content))
+                        
+                        # 2. REDIMENSIONAMOS (Thumbnail) para ahorrar RAM
+                        # Esto reduce la imagen a un tamaño máximo de 800px 
+                        # manteniendo la calidad, pero bajando el peso de MB a KB
+                        img_temp.thumbnail((800, 800))
+                        
+                        # 3. Guardamos la imagen optimizada en un nuevo buffer
+                        img_optimized = BytesIO()
+                        img_temp.save(img_optimized, format='JPEG', quality=75)
+                        img_optimized.seek(0)
+                        
+                        # 4. Ahora sí, se la pasamos a ReportLab
+                        img_reader = ImageReader(img_optimized)
+                        
+                        c.drawImage(img_reader, margin_left + 10, y - pieza_height + 10, 
+                                   width=220, height=135, preserveAspectRatio=True, anchor='c')
                     else:
-                        raise Exception("No se pudo obtener la imagen de Azure")
+                        raise Exception("No se pudo obtener imagen")
                 except Exception as e:
                     c.setFont("Helvetica-Oblique", 7)
                     c.setFillColor(colors.red)
-                    c.drawString(margin_left + 10, y - 100, f"Error de acceso: {pieza.imagen.name}")
+                    c.drawString(margin_left + 10, y - 100, "Error de memoria al procesar imagen")
                     c.setFillColor(colors.black)
-            else:
-                c.setFont("Helvetica-Oblique", 9)
-                c.setFillColor(colors.HexColor('#999999'))
-                c.drawCentredString(margin_left + 120, y - 100, "Sin imagen")
             
             # --- DATOS DERECHA ---
             c.setFillColor(colors.black)
