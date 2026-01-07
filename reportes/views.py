@@ -185,8 +185,16 @@ def detalle_reporte(request, reporte_id):
     
     if request.method == 'GET':
         reporte = get_object_or_404(ReporteDano, idReporte=reporte_id)
-        piezas_rechazadas = PiezaRechazada.objects.filter(idReporte=reporte)
+        piezas_rechazadas = PiezaRechazada.objects.filter(idReporte=reporte).select_related(
+        'idPieza__idCategoria', 
+        'idCategoriaDano'
+        )
 
+        for pieza in piezas_rechazadas:
+            if pieza.imagen:
+                pieza.url_sas = generar_url_sas(pieza.imagen.name)
+            else:
+                pieza.url_sas = None
             
         return render(request, 'detalle_reporte.html', {
             'reporte': reporte,
@@ -287,7 +295,10 @@ def ver_imagen_segura(request, pieza_id):
 @require_GET
 def generar_reporte_pdf(request, reporte_id):
     reporte = get_object_or_404(ReporteDano, idReporte=reporte_id)
-    piezasRechazadas = PiezaRechazada.objects.filter(idReporte=reporte)
+    piezasRechazadas = PiezaRechazada.objects.filter(idReporte=reporte).select_related(
+        'idPieza__idCategoria',
+        'idCategoriaDano'
+    )
     
     try:
         response = HttpResponse(content_type='application/pdf')
@@ -447,39 +458,20 @@ def generar_reporte_pdf(request, reporte_id):
             
             if pieza.imagen:
                 try:
-                    # Intentar cargar la imagen desde Azure o ruta local
-                    if hasattr(pieza.imagen, 'url'):
-                        # Si está en Azure Storage
-                        try:
-                            sas_url = generar_url_sas(pieza.imagen.name, expira_en_min=3)
-                            resp = requests.get(sas_url, timeout=5)
-                            resp.raise_for_status()
-                            img_data = BytesIO(resp.content)
-                        except:
-                            # Fallback a URL directa
-                            resp = requests.get(pieza.imagen.url, timeout=5)
-                            resp.raise_for_status()
-                            img_data = BytesIO(resp.content)
-                        
+                    with default_storage.open(pieza.imagen.name) as img_file:
+                        img_data = BytesIO(img_file.read())
                         img = ImageReader(img_data)
-                        
-                        # Calcular dimensiones manteniendo aspecto
                         img_draw_width = image_width - 20
                         img_draw_height = image_box_height - 10
-                        
-                        c.drawImage(img, 
-                                  margin_left + 10, 
-                                  y - pieza_height + 10,
-                                  width=img_draw_width, 
-                                  height=img_draw_height,
-                                  preserveAspectRatio=True,
-                                  anchor='c')
+            
+                    c.drawImage(img, margin_left + 10, y - pieza_height + 10, 
+                        width=img_draw_width, height=img_draw_height,
+                        preserveAspectRatio=True, anchor='c')
+                    
                 except Exception as e:
-                    c.setFont("Helvetica-Oblique", 9)
-                    c.setFillColor(colors.HexColor('#999999'))
-                    c.drawCentredString(margin_left + image_width / 2, 
-                                       y - pieza_height / 2, 
-                                       "Error al cargar imagen")
+                    c.setFont("Helvetica-Oblique", 8)
+                    c.setFillColor(colors.red)
+                    c.drawString(margin_left + 10, y - (pieza_height/2), f"Error al cargar imagen: {pieza.imagen.name}")
                     c.setFillColor(colors.black)
             else:
                 c.setFont("Helvetica-Oblique", 9)
